@@ -25,6 +25,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "referencing.html#@ref-1",
+    "page": "Referencing",
+    "title": "@ref",
+    "category": "section",
+    "text": "@ref Variable = Value # Inserts Value under name Variable into Scene@ref Scene.Name1.Name2 # Syntactic sugar for Scene[:Name1, :Name2] @ref Expr1, Expr1 # Syntactic sugar for (@ref Expr1, @ref Expr2)@ref Scene.X # where X doesn't yet exist - returns a Future reference to X Makes it possible to do:plot(@ref x = rand(10), color = map(to_color, @ref x))"
+},
+
+{
     "location": "referencing.html#Using-Mouse-and-Time-to-animate-plots-1",
     "page": "Referencing",
     "title": "Using Mouse and Time to animate plots",
