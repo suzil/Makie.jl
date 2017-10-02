@@ -74,10 +74,18 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "output.html#",
-    "page": "-",
-    "title": "-",
+    "page": "Input Output",
+    "title": "Input Output",
     "category": "page",
     "text": ""
+},
+
+{
+    "location": "output.html#Input-Output-1",
+    "page": "Input Output",
+    "title": "Input Output",
+    "category": "section",
+    "text": "MakiE overloads the FileIO interface. So you can just write e.g.:save(scene, \"test.png\")\nsave(scene, \"test.jpg\")There is also the option to save a plot as a Julia File:save(scene, \"test.jl\")This will try to reproduce the plotting commands as closely as possible to recreate the current scene. You can specify if you want to save the defaults explicitly or if you not want to store them, so that whenever you change defaults and the saved code gets loaded it will take the new defaults."
 },
 
 {
@@ -90,9 +98,17 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "layout.html#",
-    "page": "-",
-    "title": "-",
+    "page": "Layouting",
+    "title": "Layouting",
     "category": "page",
+    "text": ""
+},
+
+{
+    "location": "layout.html#Layouting-1",
+    "page": "Layouting",
+    "title": "Layouting",
+    "category": "section",
     "text": ""
 },
 
