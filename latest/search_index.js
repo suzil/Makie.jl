@@ -216,4 +216,12 @@ var documenterSearchIndex = {"docs": [
     "text": "\nscale!(object, 1f0) # ND version with same scalar for all dimensions\nscale!(object, (1f0, 2f0)) # 2d\nscale!(object, (1f0, 2f0, 3f0)) # 3d\n\nrotate!(object, axis::Vec, amount_degree)\n\nmove!(object, amount) # for amount it's the same as with scale!\n\n# boundingbox can be any rect type, e.g. a 3D or 2D HyperRectangle\n# with the effect of exactly fitting `object` into `boundingbox`\nmove!(object, boundingbox)"
 },
 
+{
+    "location": "devdocs.html#",
+    "page": "-",
+    "title": "-",
+    "category": "page",
+    "text": ""
+},
+
 ]}
