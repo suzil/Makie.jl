@@ -17,6 +17,62 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "functions.html#",
+    "page": "Functions",
+    "title": "Functions",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "functions.html#Functions-1",
+    "page": "Functions",
+    "title": "Functions",
+    "category": "section",
+    "text": "Primitive plotting functions. These are the most atomic operations from which one can stack together more complex plots\nscatter\nlines\nimage\nsurface\nvolume\ntext\npoly\nmesh\n "
+},
+
+{
+    "location": "extending.html#",
+    "page": "Extending MakiE",
+    "title": "Extending MakiE",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "extending.html#Extending-MakiE-1",
+    "page": "Extending MakiE",
+    "title": "Extending MakiE",
+    "category": "section",
+    "text": "There are 3 ways to extend MakiE:By creating a new function e.g. like scatter\nBy overloading plot(...) for your own type\nBy adding a new primitive + shader"
+},
+
+{
+    "location": "extending.html#Option-1-1",
+    "page": "Extending MakiE",
+    "title": "Option 1",
+    "category": "section",
+    "text": "The first option is quite trivial and can be done in any plotting package and language: just create a function that scripts together a Plot."
+},
+
+{
+    "location": "extending.html#Option-2-1",
+    "page": "Extending MakiE",
+    "title": "Option 2",
+    "category": "section",
+    "text": "Option 2 is very similar to Plots.jl recipes. Inside the function you can just use all of the plotting and drawing API to create a rich visual representation of your type. The signature that needs overloading is:function plot(obj::MyType, kw_args::Dict)\n    # use primitives and other recipes to create a new plot\n    scatter(obj, kw_arg[:my_attribute])\n    lines(...)\n    polygon(...)\nend"
+},
+
+{
+    "location": "extending.html#Option-3-1",
+    "page": "Extending MakiE",
+    "title": "Option 3",
+    "category": "section",
+    "text": "Option 3 is pretty unique and is a real extension of MakiE's functionality as it adds a new primitive drawing type. This interface will likely change a lot in the future, since it carries quite a lot of technical debt from the design of GLAbstraction + GLVisualize, but this is how you can do it right now:You will need to create defaults for the attributes of your new visual. For a documentation on how to use this macro look at @default(func_expr).\nmy_attribute_convert(A::Array) = Texture(A)\nmy_attribute_convert(A::Texture) = A\nmy_attribute_convert(A) = error(\"A needs to be an array or Texture. Found: $(typeof(A))\")\n\n@default function my_drawing_type(scene, kw_args)\n    my_attribute = my_attribute_convert(my_attribute)\n    another_attribute = another_attribute::Float32 # always gets converted to Float32\nend\n\nfunction my_drawing_type(main_object::MyType, kw_args::Dict)\n    # optionally expand keyword arguments. E.g. m = (1, :white) becomes markersize = 1, markercolor = :white\n    kw_args = expand_kwargs(kw_args)\n    scene = get_global_scene()\n    kw_args = my_drawing_type(scene, kw_args) # fill in and convert attributes\n\n    boundingbox = Signal(AABB(Vec3f0(0), Vec3f0(1))) # calculate a boundingbox from your data\n\n    primitive = GL_TRIANGLES\n\n    vsh = vert\"\"\"\n        {{GLSL_VERSION}}\n        in vec2 position;\n        void main(){\n            gl_Position = vec4(position, 0, 1.0);\n        }\n    \"\"\"\n\n    fsh = frag\"\"\"\n        {{GLSL_VERSION}}\n        out vec4 outColor;\n        void main() {\n            outColor = vec4(1.0, 1.0, 1.0, 1.0);\n        }\n    \"\"\"\n    program = LazyShader(vsh, fsh)\n    robj = std_renderobject(shader_uniforms, program, boundingbox, primitive, nothing)\n    # The attributes that you add to the scene should be all signals and all editable.\n    # if an attribute is fixed, don't add it to the scene\n    insert_scene!(scene, :scatter, viz, attributes)\n    attributes\nend\n"
+},
+
+{
     "location": "referencing.html#",
     "page": "Referencing",
     "title": "Referencing",
@@ -81,7 +137,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "labels.html#",
+    "location": "legends.html#",
     "page": "Legend",
     "title": "Legend",
     "category": "page",
@@ -89,7 +145,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "labels.html#Legend-1",
+    "location": "legends.html#Legend-1",
     "page": "Legend",
     "title": "Legend",
     "category": "section",
