@@ -9,6 +9,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#MakiE-1",
+    "page": "Home",
+    "title": "MakiE",
+    "category": "section",
+    "text": ""
+},
+
+{
     "location": "referencing.html#",
     "page": "Referencing",
     "title": "Referencing",
@@ -58,18 +66,34 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "axis.html#",
-    "page": "-",
-    "title": "-",
+    "page": "Axis",
+    "title": "Axis",
     "category": "page",
     "text": ""
 },
 
 {
+    "location": "axis.html#Axis-1",
+    "page": "Axis",
+    "title": "Axis",
+    "category": "section",
+    "text": "The axis is just a scene object, making it easy to manipulate and share between plots. Axis objects also contains the mapping you want to apply to the data and can interactively be changed. An Axis object can be created from any boundingbox and inserted into any plot."
+},
+
+{
     "location": "labels.html#",
-    "page": "-",
-    "title": "-",
+    "page": "Legend",
+    "title": "Legend",
     "category": "page",
     "text": ""
+},
+
+{
+    "location": "labels.html#Legend-1",
+    "page": "Legend",
+    "title": "Legend",
+    "category": "section",
+    "text": "The Legend is an interactive object, that can be edited and interacted with like any other object in MakiE.You can create it on your own, or let it get created by automatically by a plot command.\nscene = Scene()\n\nlegend = Legend(\n    names = [\"hello\", \"names\"],\n    markers = [:circle, :plus],\n    colors = [:white, :black],\n    backgroundcolor = :gray\n)\n\nlegend[:names][1] = \"update name\" # easily update the names in the label\n\nlegend[:colors] = [:green, :blue] # update color and all other attributes in the same way\n\n# add to a plot\n\np = plot(rand(10, 2))\n\np[:legend] = legend # voila, your plot now has a legend.\n\n# Alternatively do:\n\np = plot(rand(10, 2), legend = Legend(names = [\"hello\", \"legend\"]))"
 },
 
 {
@@ -90,10 +114,18 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "reflection.html#",
-    "page": "-",
-    "title": "-",
+    "page": "Reflection",
+    "title": "Reflection",
     "category": "page",
     "text": ""
+},
+
+{
+    "location": "reflection.html#Reflection-1",
+    "page": "Reflection",
+    "title": "Reflection",
+    "category": "section",
+    "text": "Since objects with links (as explained in Referencing) to each other, all animatable etc, a plot object can become fairly complex. To work against this, there is a rich reflection api, allowing you to look into the scene tree, display what objects are linked and interactively change the attributes."
 },
 
 {
@@ -109,7 +141,23 @@ var documenterSearchIndex = {"docs": [
     "page": "Layouting",
     "title": "Layouting",
     "category": "section",
-    "text": ""
+    "text": "Every object contains a boundingbox and a box indicating where the object should be placed. By default, those boxes are the same. But if you want to move, stretch, scale an object, you can edit the latter. This can be a manual process, or an automatic one. E.g. there are several functions which try to automatically find a layout for certain objects."
+},
+
+{
+    "location": "layout.html#Automatic-interface-1",
+    "page": "Layouting",
+    "title": "Automatic interface",
+    "category": "section",
+    "text": "layout!(object1, object2, objectN...) 1D grid (alternatively use a vector)\nlayout!(Matrix{Objects}(...)) # 2d Grid\nlayout!(Array{Objects, 3}(...))\n\n# TODO port layouting options from Plots.jl\n"
+},
+
+{
+    "location": "layout.html#Manual-interface-1",
+    "page": "Layouting",
+    "title": "Manual interface",
+    "category": "section",
+    "text": "\nscale!(object, 1f0) # ND version with same scalar for all dimensions\nscale!(object, (1f0, 2f0)) # 2d\nscale!(object, (1f0, 2f0, 3f0)) # 3d\n\nrotate!(object, axis::Vec, amount_degree)\n\nmove!(object, amount) # for amount it's the same as with scale!\n\n# boundingbox can be any rect type, e.g. a 3D or 2D HyperRectangle\n# with the effect of exactly fitting `object` into `boundingbox`\nmove!(object, boundingbox)"
 },
 
 ]}
