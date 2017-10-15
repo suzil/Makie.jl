@@ -13,8 +13,8 @@ end
 pscat = scatter(pos)
 plines = lines(view(pos, 1:2:length(pos)))
 center!(scene)</code></pre></div><p><img src="theming_plot1.png" alt/></p><p>Now, the first simple way of theming your plots/applying a series of attributes goes like this:</p><div><pre><code class="language-julia">@theme theme = begin
-    markersize = MakiE.to_markersize(0.01)
-    strokecolor = MakiE.to_color(:white)
+    markersize = to_markersize(0.01)
+    strokecolor = to_color(:white)
     strokewidth = to_float(0.01)
 end
 
@@ -24,17 +24,17 @@ push!(pscat, theme)</code></pre></div><p><img src="theming_plot2.png" alt/></p><
 scene[:scatter] = theme
 # Or permananently (to be more precise: just for this session) change the theme for scatter
 scene[:theme, :scatter] = theme
-scatter(lift_node(x-&gt; x .+ (Point3f0(0, 0, 1),), pos)) # will now use new theme</code></pre><pre><code class="language-"># Make a completely new theme
+scatter(lift_node(x-&gt; x .+ (Point3f0(0, 0, 1),), pos)) # will now use new theme</code></pre><div><pre><code class="language-julia"># Make a completely new theme
 function custom_theme(scene)
     @theme theme = begin
         linewidth = to_float(3)
-        colormap = MakiE.to_colormap(:BuGn)
+        colormap = to_colormap(:RdPu)
         scatter = begin
-            marker = MakiE.to_spritemarker(Circle)
+            marker = to_spritemarker(Circle)
             markersize = to_float(0.03)
-            strokecolor = MakiE.to_color(:white)
+            strokecolor = to_color(:white)
             strokewidth = to_float(0.01)
-            glowcolor = MakiE.to_color(RGBA(0, 0, 0, 0.4))
+            glowcolor = to_color(RGBA(0, 0, 0, 0.4))
             glowwidth = to_float(0.1)
         end
     end
@@ -47,4 +47,4 @@ custom_theme(scene)
 
 # From now everything will be plotted with new theme
 psurf = surface(vx, 1:0.1:2, psurf[:z])
-save(&quot;theming_plot3.png&quot;, scene); nothing # hide</code></pre><p><img src="theming_plot3.png" alt/></p><footer><hr/><a class="previous" href="extending.html"><span class="direction">Previous</span><span class="title">Extending</span></a><a class="next" href="referencing.html"><span class="direction">Next</span><span class="title">Referencing</span></a></footer></article></body></html>
+center!(scene)</code></pre></div><p><img src="theming_plot3.png" alt/></p><footer><hr/><a class="previous" href="extending.html"><span class="direction">Previous</span><span class="title">Extending</span></a><a class="next" href="referencing.html"><span class="direction">Next</span><span class="title">Referencing</span></a></footer></article></body></html>
