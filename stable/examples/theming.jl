@@ -13,6 +13,8 @@ pscat = scatter(pos)
 plines = lines(view(pos, 1:2:length(pos)))
 center!(scene)
 
+save(homedir()*"/Desktop/test.png", scene)
+
 @theme theme = begin
     markersize = MakiE.to_markersize(0.01)
     strokecolor = MakiE.to_color(:white)
