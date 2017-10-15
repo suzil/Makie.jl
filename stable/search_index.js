@@ -1,0 +1,315 @@
+var documenterSearchIndex = {"docs": [
+
+{
+    "location": "index.html#",
+    "page": "Home",
+    "title": "Home",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "index.html#MakiE-1",
+    "page": "Home",
+    "title": "MakiE",
+    "category": "section",
+    "text": "MakiE is a high level plotting interface for GLVisualize, with a focus on interactivity and speed.It can also be seen as a prototype for a new design of Plots.jl, since it will implement a very similar interface and incorporate a lot of the ideas.A fresh start instead of the already available GLVisualize backend for Plots.jl was needed for the following reasons:Plots.jl was written to create static plots without any interaction. This is deeply reflected in the internal designand makes it hard to integrate the high performance interaction possibilities from GLVisualize.Plots.jl has many high level plotting packages as a backend which lead to a very inconsistent design for the backends.E.g. there is no straight interface a backend needs to implement. The backend abstraction happens at a very high level and the Plots.jl design relies on the high-level backends to fill in a lot of functionality - which lead to a lot of duplicated work for the lower level backends and a lot of inconsistent behavior since the code isn't shared between backends. It also means that it is a lot of work to maintain a backend.The attributes a plot/series contains and where the default creation happens is opaque and not well documented.Sometimes it's the task of the backend to create defaults for missing attributes, sometimes Plots.jl creates the defaults. A missing attribute is signaled in too many different ways (e.g false, nothing, \"\") which then needs to be checked and filled in by the backend. This leads to making it very challenging to e.g. find the color of a line for different plot types and creates buggy, inconsistent and messy backend code.As mentioned in point 2, there is not a single consistent low level drawing API. This also influences recipes, since there is not a straight mapping to a low level drawing API and therefore it's not that easy to compose. There should be a finite set of 'atomic' drawing operations (which can't be decomposed further) which a backendneeds to implement and the rest should be implemented via recipes using those atomic operations. So once a backend implements those, it will support all of the plotting operations and only minor maintenance work needs to be done from that point on.Backend loading is done in Plots.jl via evaling the backend code. This has at 4 negative consequences:  a) Backend code can't be precompiled leading to longer load times  b) Backend dependencies are not in the Plots.jl REQUIRE  c) Backend dependencies get loaded via a function that gets evaled, so it's a bit awkward to use those dependencies in the function inside a backend  d) World age issues because of the evalPlease read the chapters Scene, Functions, Referencing, Extending, Backends and Devdocs to see how MakiE solves those issues! The code that will be moved back to Plots.jl lives in plotbase"
+},
+
+{
+    "location": "scene.html#",
+    "page": "Scene",
+    "title": "Scene",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "scene.html#Scene-1",
+    "page": "Scene",
+    "title": "Scene",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "functions.html#",
+    "page": "Functions",
+    "title": "Functions",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "functions.html#MakiE.scatter",
+    "page": "Functions",
+    "title": "MakiE.scatter",
+    "category": "Function",
+    "text": "scatter(x, y, z) / scatter(x, y) / scatter(positions)\n\nPlots a marker for each element in xyz/positions\n\nAttributes:\n\nAttribute x, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute y, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute positions, convert function to_positions which accepts:\n\n`NTuple{2, AbstractArray{Float}}` for 2D points\n\n`NTuple{3, AbstractArray{Float}}` for 3D points\n\n`view(AbstractArray{Point}, idx)` for a subset of points. Can be shared (so you can plot subsets of the same data)!\n\n`AbstractArray{T}` where T needs to have `length` defined and must be convertible to a Point\n\n____________________\n\nAttribute colormap, convert function to_colormap which accepts:\n\nAn `AbstractVector{T}` with any object that [to_color](@ref) accepts\n\nTuple(A, B) or Pair{A, B} with any object that [to_color](@ref) accepts\n\nA Symbol/String naming the gradient. For more on what names are available please see: `available_gradients()`\n\n____________________\n\nAttribute intensity, convert function to_intensity which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute colornorm, convert function to_colornorm which accepts:\n\nanything that can be converted to `Vec2f0` (e.g. `Tuple`, `Vector`)\n\nIf colornorm is `nothing` will default to calculate the extrema from `intensity`\n\n____________________\n\nAttribute marker, convert function to_spritemarker which accepts:\n\n`GeometryTypes.Circle(Point2(...), radius)`\n\n`Type{GeometryTypes.Circle}`\n\n`Type{GeometryTypes.Rectangle}`\n\nAny `Char`, including unicode\n\nMatrix of AbstractFloat will be interpreted as a distancefield (negative numbers outside shape, positive inside)\n\nAny AbstractMatrix{<: Colorant} or other image type\n\nA `Symbol` - Available options can be printed with `available_marker_symbols()`\n\nVector of anything that is accepted as a single marker will give each point it's own marker. Note that it needs to be a uniform vector with the same element type!\n\n____________________\n\nAttribute strokecolor, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts\n\n____________________\n\nAttribute strokewidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute glowcolor, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts\n\n____________________\n\nAttribute glowwidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute markersize, convert function to_markersize which accepts:\n\nAnything that can be converted to `Vec2f0` for x, y scale\n\n____________________\n\nAttribute rotations, convert function to_rotations which accepts:\n\n`Billboard()` for a rotation that will always face the camera\n\nAny AbstractArray which elements can be converted to Vec4 (as a quaternion x, y, z, w)\n\n____________________\n\n\n\n"
+},
+
+{
+    "location": "functions.html#MakiE.lines",
+    "page": "Functions",
+    "title": "MakiE.lines",
+    "category": "Function",
+    "text": "lines(x, y, z) / lines(x, y) / lines(positions)\n\nPlots a connected line for each element in xyz/positions\n\nAttributes:\n\nAttribute x, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute y, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute positions, convert function to_positions which accepts:\n\n`NTuple{2, AbstractArray{Float}}` for 2D points\n\n`NTuple{3, AbstractArray{Float}}` for 3D points\n\n`view(AbstractArray{Point}, idx)` for a subset of points. Can be shared (so you can plot subsets of the same data)!\n\n`AbstractArray{T}` where T needs to have `length` defined and must be convertible to a Point\n\n____________________\n\nAttribute colormap, convert function to_colormap which accepts:\n\nAn `AbstractVector{T}` with any object that [to_color](@ref) accepts\n\nTuple(A, B) or Pair{A, B} with any object that [to_color](@ref) accepts\n\nA Symbol/String naming the gradient. For more on what names are available please see: `available_gradients()`\n\n____________________\n\nAttribute intensity, convert function to_intensity which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute colornorm, convert function to_colornorm which accepts:\n\nanything that can be converted to `Vec2f0` (e.g. `Tuple`, `Vector`)\n\nIf colornorm is `nothing` will default to calculate the extrema from `intensity`\n\n____________________\n\nAttribute linewidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute linestyle, convert function to_linestyle which accepts:\n\n`Nothing` for no style\n\n`AbstractVector{<:AbstractFloat}` for denoting sequences of fill/nofill. E.g. [0.5, 0.8, 1.2] will result in 0.5 filled, 0.3 unfilled, 0.4 filled\n\nA `Symbol` equal to `:dash`, `:dot`, `:dashdot`, `:dashdotdot`\n\n____________________\n\nAttribute pattern, convert function to_pattern which accepts:\n\nSame as `to_linestyle`\n\n____________________\n\n\n\n"
+},
+
+{
+    "location": "functions.html#MakiE.surface",
+    "page": "Functions",
+    "title": "MakiE.surface",
+    "category": "Function",
+    "text": "surface(x, y, z)\n\nPlots a surface, where x y z are supposed to lie on a grid\n\nAttributes:\n\nAttribute x, convert function to_surface which accepts:\n\n`Range`\n\nAnything that can be converted to Matrix/Vector of Float32\n\n____________________\n\nAttribute y, convert function to_surface which accepts:\n\n`Range`\n\nAnything that can be converted to Matrix/Vector of Float32\n\n____________________\n\nAttribute z, convert function to_surface which accepts:\n\n`Range`\n\nAnything that can be converted to Matrix/Vector of Float32\n\n____________________\n\nAttribute color, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts\n\n____________________\n\n\n\n"
+},
+
+{
+    "location": "functions.html#MakiE.mesh",
+    "page": "Functions",
+    "title": "MakiE.mesh",
+    "category": "Function",
+    "text": "mesh(x, y, z) / mesh(mesh_object)\n\nPlots a 3D mesh\n\nAttributes:\n\nAttribute color, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts\n\n____________________\n\nAttribute shading, convert function Bool which accepts:\n\n```\nBool <: Integer\n```\n\nBoolean type.\n\n____________________\n\nAttribute positions, convert function to_positions which accepts:\n\n`NTuple{2, AbstractArray{Float}}` for 2D points\n\n`NTuple{3, AbstractArray{Float}}` for 3D points\n\n`view(AbstractArray{Point}, idx)` for a subset of points. Can be shared (so you can plot subsets of the same data)!\n\n`AbstractArray{T}` where T needs to have `length` defined and must be convertible to a Point\n\n____________________\n\nAttribute faces, convert function to_faces which accepts:\n\nAny array of NTuple/GeometryTypes.Face\n\n____________________\n\nAttribute attribute_id, convert function to_attribut_id which accepts:\n\nIndex into Mesh attributes, Vector{Integer}\n\n____________________\n\nAttribute vertexmesh, convert function to_mesh which accepts:\n\nX, Y, Z as triangles, so need to have the same length and be dividable by 3\n\n____________________\n\n\n\n"
+},
+
+{
+    "location": "functions.html#MakiE.wireframe",
+    "page": "Functions",
+    "title": "MakiE.wireframe",
+    "category": "Function",
+    "text": "wireframe(x, y, z) / wireframe(positions) / wireframe(mesh)\n\nDraws a wireframe either interpreted as a surface or mesh\n\nAttributes:\n\n\n\n"
+},
+
+{
+    "location": "functions.html#Functions-1",
+    "page": "Functions",
+    "title": "Functions",
+    "category": "section",
+    "text": "Primitive plotting functions. These are the most atomic operations from which one can stack together more complex plotsscatter\nlines\nsurface\n\nmesh\nwireframeimage heatmap volume text poly"
+},
+
+{
+    "location": "backends.html#",
+    "page": "Backends",
+    "title": "Backends",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "backends.html#Backends-1",
+    "page": "Backends",
+    "title": "Backends",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "extending.html#",
+    "page": "Extending",
+    "title": "Extending",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "extending.html#Extending-1",
+    "page": "Extending",
+    "title": "Extending",
+    "category": "section",
+    "text": "There are 3 ways to extend MakiE:By creating a new function combining multiple plotting commands (duh)\nBy overloading conversions for your custom type\nBy overloading plot(...) for your own type\nBy adding a new primitive + shader"
+},
+
+{
+    "location": "extending.html#Option-1-1",
+    "page": "Extending",
+    "title": "Option 1",
+    "category": "section",
+    "text": "The first option is quite trivial and can be done in any plotting package and language: just create a function that scripts together a Plot."
+},
+
+{
+    "location": "extending.html#Option-2-1",
+    "page": "Extending",
+    "title": "Option 2",
+    "category": "section",
+    "text": "The plotting pipeline heavily relies on conversion functions which check the attributes for validity, document what's possible to pass and convert them to the types that the backends need. They usually look like this:to_positions(backend, positions) = Point3f0.(positions) # E.g. everything that can be converted to a PointAs you can see, the first argument is the backend, so you can overload this for a specific backend or for a specific position type. This can look something like this:using MakiE, GeometryTypes\n# To simplify the example, we take the already existing GeometryTypes.Circle type, which\n# can already be decomposed into positions\nfunction MakiE.to_positions(backend, x::Circle)\n    # Convert to a type to_positions can handle.\n    # Everything that usually works in e.g. scatter/lines should be allowed here.\n    positions = decompose(Point2f0, x, 50)\n    # Pass your position data to to_positions,\n    # just in case the backend has some extra converts\n    # that are not visible in the user facing API.\n    MakiE.to_positions(backend, positions)\nend\nscene = Scene()\np1 = lines(Circle(Point2f0(0), 5f0))\np2 = scatter(Circle(Point2f0(0), 6f0))\n# since the pipeline for converting attributes also knows about Circle now,\n# we can update the attribute directly with our own type\np2[:positions] = Circle(Point2f0(0), 7f0)\ncenter!(scene)"
+},
+
+{
+    "location": "extending.html#Option-3-1",
+    "page": "Extending",
+    "title": "Option 3",
+    "category": "section",
+    "text": "Option 2 is very similar to Plots.jl recipes. Inside the function you can just use all of the plotting and drawing API to create a rich visual representation of your type. The signature that needs overloading is:function plot(obj::MyType, kw_args::Dict)\n    # use primitives and other recipes to create a new plot\n    scatter(obj, kw_arg[:my_attribute])\n    lines(...)\n    polygon(...)\nend"
+},
+
+{
+    "location": "extending.html#Option-3-2",
+    "page": "Extending",
+    "title": "Option 3",
+    "category": "section",
+    "text": "Option 3 is pretty unique and is a real extension of MakiE's functionality as it adds a new primitive drawing type. This interface will likely change a lot in the future, since it carries quite a lot of technical debt from the design of GLAbstraction + GLVisualize, but this is how you can do it right now:You will need to create defaults for the attributes of your new visual. For a documentation on how to use this macro look at Devdocs.\nmy_attribute_convert(A::Array) = Texture(A)\nmy_attribute_convert(A::Texture) = A\nmy_attribute_convert(A) = error(\"A needs to be an array or Texture. Found: $(typeof(A))\")\n\n@default function my_drawing_type(scene, kw_args)\n    my_attribute = my_attribute_convert(my_attribute)\n    another_attribute = to_float(another_attribute) # always gets converted to Float32\nend\n\nfunction my_drawing_type(main_object::MyType, kw_args::Dict)\n    # optionally expand keyword arguments. E.g. m = (1, :white) becomes markersize = 1, markercolor = :white\n    kw_args = expand_kwargs(kw_args)\n    scene = get_global_scene()\n    # The default macro adds a _defaults to the function name\n    kw_args = my_drawing_type_defaults(scene, kw_args) # fill in and convert attributes\n\n    boundingbox = Signal(AABB(Vec3f0(0), Vec3f0(1))) # calculate a boundingbox from your data\n\n    primitive = GL_TRIANGLES\n\n    vsh = vert\"\"\"\n        {{GLSL_VERSION}}\n        in vec2 position;\n        void main(){\n            gl_Position = vec4(position, 0, 1.0);\n        }\n    \"\"\"\n\n    fsh = frag\"\"\"\n        {{GLSL_VERSION}}\n        out vec4 outColor;\n        void main() {\n            outColor = vec4(1.0, 1.0, 1.0, 1.0);\n        }\n    \"\"\"\n    program = LazyShader(vsh, fsh)\n    robj = std_renderobject(shader_uniforms, program, boundingbox, primitive, nothing)\n    # The attributes that you add to the scene should be all signals and all editable.\n    # if an attribute is fixed, don't add it to the scene\n    insert_scene!(scene, :scatter, viz, attributes)\n    attributes\nend\n"
+},
+
+{
+    "location": "referencing.html#",
+    "page": "Referencing",
+    "title": "Referencing",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "referencing.html#Referencing-1",
+    "page": "Referencing",
+    "title": "Referencing",
+    "category": "section",
+    "text": "MakiE offers a sophisticated referencing system to share attributes across the Scene in your plot. This is great for animations and saving resources - also if the backend decides to put data on the GPU you might even share those in GPU memory.This allows the following use cases:"
+},
+
+{
+    "location": "referencing.html#@ref-1",
+    "page": "Referencing",
+    "title": "@ref",
+    "category": "section",
+    "text": "@ref Variable = Value # Inserts Value under name Variable into Scene@ref Scene.Name1.Name2 # Syntactic sugar for Scene[:Name1, :Name2] @ref Expr1, Expr1 # Syntactic sugar for (@ref Expr1, @ref Expr2)"
+},
+
+{
+    "location": "referencing.html#Using-Mouse-and-Time-to-animate-plots-1",
+    "page": "Referencing",
+    "title": "Using Mouse and Time to animate plots",
+    "category": "section",
+    "text": "using MakiE\n\nscene = Scene()\n\nscatter(map((mpos, t)-> mpos .+ (sin(t), cos(t)), @ref Scene.Mouse, Scene.Time))\n"
+},
+
+{
+    "location": "referencing.html#Animating-and-sharing-on-the-GPU-1",
+    "page": "Referencing",
+    "title": "Animating and sharing on the GPU",
+    "category": "section",
+    "text": "using MakiE\n\nscene = Scene()\n@ref A = rand(32, 32) # if uploaded to the GPU, it will be shared on the GPU\n\nsurface(@ref A) # refer to exactly the same a in wireframe and surface plot\nwireframe((@ref A) .+ 0.5) # offsets A on the GPU based on the same data\n\nfor i = 1:10\n    # updates A - resulting in an animation of the surface and offsetted wireframe plot\n    @ref A[:, :] = rand(32, 32)\nend"
+},
+
+{
+    "location": "referencing.html#Simple-GUI-1",
+    "page": "Referencing",
+    "title": "Simple GUI",
+    "category": "section",
+    "text": "using MakiE\n\nscene = Scene()\n@ref slicer1 = slider(linspace(0, 1, 100)) # create a slider\n\n# generate some pretty data\nfunction xy_data(x,y,i)\n    x = (x - 0.5f0) * i\n    y = (y - 0.5f0) * i\n    r = sqrt(x * x + y * y)\n    Float32(sin(r) / r)\nend\n\nsurf(i, N) = Float32[xy_data(x, y, i, N) for x = linspace(0, 1, N), y = linspace(0, 1, N)]\n\nsurface(surf.(@ref slicer1, 512)) # refer to exactly the same a in wireframe and surface plot\n"
+},
+
+{
+    "location": "axis.html#",
+    "page": "Axis",
+    "title": "Axis",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "axis.html#Axis-1",
+    "page": "Axis",
+    "title": "Axis",
+    "category": "section",
+    "text": "The axis is just a scene object, making it easy to manipulate and share between plots. Axis objects also contains the mapping you want to apply to the data and can interactively be changed. An Axis object can be created from any boundingbox and inserted into any plot."
+},
+
+{
+    "location": "legends.html#",
+    "page": "Legend",
+    "title": "Legend",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "legends.html#Legend-1",
+    "page": "Legend",
+    "title": "Legend",
+    "category": "section",
+    "text": "The Legend is an interactive object, that can be edited and interacted with like any other object in MakiE.You can create it on your own, or let it get created by automatically by a plot command.\nscene = Scene()\n\nlegend = Legend(\n    names = [\"hello\", \"names\"],\n    markers = [:circle, :plus],\n    colors = [:white, :black],\n    backgroundcolor = :gray\n)\n\nlegend[:names][1] = \"update name\" # easily update the names in the label\n\nlegend[:colors] = [:green, :blue] # update color and all other attributes in the same way\n\n# add to a plot\n\np = plot(rand(10, 2))\n\np[:legend] = legend # voila, your plot now has a legend.\n\n# Alternatively do:\n\np = plot(rand(10, 2), legend = Legend(names = [\"hello\", \"legend\"]))"
+},
+
+{
+    "location": "output.html#",
+    "page": "Input Output",
+    "title": "Input Output",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "output.html#Input-Output-1",
+    "page": "Input Output",
+    "title": "Input Output",
+    "category": "section",
+    "text": "MakiE overloads the FileIO interface. So you can just write e.g.:save(scene, \"test.png\")\nsave(scene, \"test.jpg\")There is also the option to save a plot as a Julia File:save(scene, \"test.jl\")This will try to reproduce the plotting commands as closely as possible to recreate the current scene. You can specify if you want to save the defaults explicitly or if you not want to store them, so that whenever you change defaults and the saved code gets loaded it will take the new defaults."
+},
+
+{
+    "location": "reflection.html#",
+    "page": "Reflection",
+    "title": "Reflection",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "reflection.html#Reflection-1",
+    "page": "Reflection",
+    "title": "Reflection",
+    "category": "section",
+    "text": "Since objects with links (as explained in Referencing) to each other, all animatable etc, a plot object can become fairly complex. To work against this, there is a rich reflection api, allowing you to look into the scene tree, display what objects are linked and interactively change the attributes."
+},
+
+{
+    "location": "layout.html#",
+    "page": "Layouting",
+    "title": "Layouting",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "layout.html#Layouting-1",
+    "page": "Layouting",
+    "title": "Layouting",
+    "category": "section",
+    "text": "Every object contains a boundingbox and a box indicating where the object should be placed. By default, those boxes are the same. But if you want to move, stretch, scale an object, you can edit the latter. This can be a manual process, or an automatic one. E.g. there are several functions which try to automatically find a layout for certain objects."
+},
+
+{
+    "location": "layout.html#Automatic-interface-1",
+    "page": "Layouting",
+    "title": "Automatic interface",
+    "category": "section",
+    "text": "layout!(object1, object2, objectN...) 1D grid (alternatively use a vector)\nlayout!(Matrix{Objects}(...)) # 2d Grid\nlayout!(Array{Objects, 3}(...))\n\n# TODO port layouting options from Plots.jl\n"
+},
+
+{
+    "location": "layout.html#Manual-interface-1",
+    "page": "Layouting",
+    "title": "Manual interface",
+    "category": "section",
+    "text": "\nscale!(object, 1f0) # ND version with same scalar for all dimensions\nscale!(object, (1f0, 2f0)) # 2d\nscale!(object, (1f0, 2f0, 3f0)) # 3d\n\nrotate!(object, axis::Vec, amount_degree)\n\nmove!(object, amount) # for amount it's the same as with scale!\n\n# boundingbox can be any rect type, e.g. a 3D or 2D HyperRectangle\n# with the effect of exactly fitting `object` into `boundingbox`\nmove!(object, boundingbox)"
+},
+
+{
+    "location": "devdocs.html#",
+    "page": "Devdocs",
+    "title": "Devdocs",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "devdocs.html#Devdocs-1",
+    "page": "Devdocs",
+    "title": "Devdocs",
+    "category": "section",
+    "text": ""
+},
+
+]}
