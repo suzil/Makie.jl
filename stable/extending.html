@@ -15,8 +15,8 @@ end
 scene = Scene()
 p1 = lines(Circle(Point2f0(0), 5f0))
 p2 = scatter(Circle(Point2f0(0), 6f0))
-center!(scene)</code></pre></div><p><img src="plot1.png" alt/></p><p>since the pipeline for converting attributes also knows about Circle now, we can update the attribute directly with our own type</p><div><pre><code class="language-julia">p2[:positions] = Circle(Point2f0(0), 7f0)
-center!(scene)</code></pre></div><p><img src="plot2.png" alt/></p><h2><a class="nav-anchor" id="Option-3-1" href="#Option-3-1">Option 3</a></h2><p>Option 2 is very similar to Plots.jl recipes. Inside the function you can just use all of the plotting and drawing API to create a rich visual representation of your type. The signature that needs overloading is:</p><pre><code class="language-julia">function plot(obj::MyType, kw_args::Dict)
+center!(scene)</code></pre></div><p><img src="ext_plot1.png" alt/></p><p>since the pipeline for converting attributes also knows about Circle now, we can update the attribute directly with our own type</p><div><pre><code class="language-julia">p2[:positions] = Circle(Point2f0(0), 7f0)
+center!(scene)</code></pre></div><p><img src="ext_plot2.png" alt/></p><h2><a class="nav-anchor" id="Option-3-1" href="#Option-3-1">Option 3</a></h2><p>Option 2 is very similar to Plots.jl recipes. Inside the function you can just use all of the plotting and drawing API to create a rich visual representation of your type. The signature that needs overloading is:</p><pre><code class="language-julia">function plot(obj::MyType, kw_args::Dict)
     # use primitives and other recipes to create a new plot
     scatter(obj, kw_arg[:my_attribute])
     lines(...)
