@@ -41,11 +41,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "functions.html#Functions-1",
+    "page": "Functions",
+    "title": "Functions",
+    "category": "section",
+    "text": "Primitive plotting functions. These are the most atomic operations from which one can stack together more complex plots"
+},
+
+{
     "location": "functions.html#MakiE.scatter",
     "page": "Functions",
     "title": "MakiE.scatter",
     "category": "Function",
     "text": "scatter(x, y, z) / scatter(x, y) / scatter(positions)\n\nPlots a marker for each element in xyz/positions\n\nAttributes:\n\nAttribute x, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute y, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute positions, convert function to_positions which accepts:\n\n`NTuple{2, AbstractArray{Float}}` for 2D points\n\n`NTuple{3, AbstractArray{Float}}` for 3D points\n\n`view(AbstractArray{Point}, idx)` for a subset of points. Can be shared (so you can plot subsets of the same data)!\n\n`AbstractArray{T}` where T needs to have `length` defined and must be convertible to a Point\n\n____________________\n\nAttribute colormap, convert function to_colormap which accepts:\n\nAn `AbstractVector{T}` with any object that [to_color](@ref) accepts\n\nTuple(A, B) or Pair{A, B} with any object that [to_color](@ref) accepts\n\nA Symbol/String naming the gradient. For more on what names are available please see: `available_gradients()`\n\n____________________\n\nAttribute intensity, convert function to_intensity which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute colornorm, convert function to_colornorm which accepts:\n\nanything that can be converted to `Vec2f0` (e.g. `Tuple`, `Vector`)\n\nIf colornorm is `nothing` will default to calculate the extrema from `intensity`\n\n____________________\n\nAttribute marker, convert function to_spritemarker which accepts:\n\n`GeometryTypes.Circle(Point2(...), radius)`\n\n`Type{GeometryTypes.Circle}`\n\n`Type{GeometryTypes.Rectangle}`\n\nAny `Char`, including unicode\n\nMatrix of AbstractFloat will be interpreted as a distancefield (negative numbers outside shape, positive inside)\n\nAny AbstractMatrix{<: Colorant} or other image type\n\nA `Symbol` - Available options can be printed with `available_marker_symbols()`\n\nVector of anything that is accepted as a single marker will give each point it's own marker. Note that it needs to be a uniform vector with the same element type!\n\n____________________\n\nAttribute strokecolor, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts\n\n____________________\n\nAttribute strokewidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute glowcolor, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts\n\n____________________\n\nAttribute glowwidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute markersize, convert function to_markersize which accepts:\n\nAnything that can be converted to `Vec2f0` for x, y scale\n\n____________________\n\nAttribute rotations, convert function to_rotations which accepts:\n\n`Billboard()` for a rotation that will always face the camera\n\nAny AbstractArray which elements can be converted to Vec4 (as a quaternion x, y, z, w)\n\n____________________\n\n\n\n"
+},
+
+{
+    "location": "functions.html#Scatter-1",
+    "page": "Functions",
+    "title": "Scatter",
+    "category": "section",
+    "text": "using MakiE\nscene = Scene(resolution = (500, 500))\nscatter(rand(10), rand(10))\ncenter!(scene)\nsave(\"scatter.png\", scene); nothing # hide(Image: )scatter"
 },
 
 {
@@ -57,19 +73,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "functions.html#MakiE.surface",
+    "location": "functions.html#Lines-1",
     "page": "Functions",
-    "title": "MakiE.surface",
-    "category": "Function",
-    "text": "surface(x, y, z)\n\nPlots a surface, where x y z are supposed to lie on a grid\n\nAttributes:\n\nAttribute x, convert function to_surface which accepts:\n\n`Range`\n\nAnything that can be converted to Matrix/Vector of Float32\n\n____________________\n\nAttribute y, convert function to_surface which accepts:\n\n`Range`\n\nAnything that can be converted to Matrix/Vector of Float32\n\n____________________\n\nAttribute z, convert function to_surface which accepts:\n\n`Range`\n\nAnything that can be converted to Matrix/Vector of Float32\n\n____________________\n\nAttribute color, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts\n\n____________________\n\n\n\n"
+    "title": "Lines",
+    "category": "section",
+    "text": "using MakiE\nscene = Scene(resolution = (500, 500))\nx = linspace(0, 3pi)\nlines(x, sin.(x))\ncenter!(scene)\nsave(\"lines.png\", scene); nothing # hide(Image: )lines"
 },
 
 {
-    "location": "functions.html#MakiE.mesh",
+    "location": "functions.html#Surface-1",
     "page": "Functions",
-    "title": "MakiE.mesh",
-    "category": "Function",
-    "text": "mesh(x, y, z) / mesh(mesh_object)\n\nPlots a 3D mesh\n\nAttributes:\n\nAttribute color, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts\n\n____________________\n\nAttribute shading, convert function Bool which accepts:\n\n```\nBool <: Integer\n```\n\nBoolean type.\n\n____________________\n\nAttribute positions, convert function to_positions which accepts:\n\n`NTuple{2, AbstractArray{Float}}` for 2D points\n\n`NTuple{3, AbstractArray{Float}}` for 3D points\n\n`view(AbstractArray{Point}, idx)` for a subset of points. Can be shared (so you can plot subsets of the same data)!\n\n`AbstractArray{T}` where T needs to have `length` defined and must be convertible to a Point\n\n____________________\n\nAttribute faces, convert function to_faces which accepts:\n\nAny array of NTuple/GeometryTypes.Face\n\n____________________\n\nAttribute attribute_id, convert function to_attribut_id which accepts:\n\nIndex into Mesh attributes, Vector{Integer}\n\n____________________\n\nAttribute vertexmesh, convert function to_mesh which accepts:\n\nX, Y, Z as triangles, so need to have the same length and be dividable by 3\n\n____________________\n\n\n\n"
+    "title": "Surface",
+    "category": "section",
+    "text": "using MakiE\nscene = Scene(resolution = (500, 500))\nN = 32\nfunction xy_data(x,y,i, N)\n    x = ((x/N)-0.5)*i\n    y = ((y/N)-0.5)*i\n    r = sqrt(x*x + y*y)\n    res = (sin(r)/r)\n    isnan(res) ? 1 : res\nend\nz = [Float32(xy_data(x, y, 20, 32)) + 0.5 for x=1:32, y=1:32]\nrange = linspace(0, 3, N)\nsurf = surface(range, range, z, colormap = :Spectral)\ncenter!(scene)\nsave(\"surface.png\", scene); nothing # hide(Image: )"
 },
 
 {
@@ -81,11 +97,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "functions.html#Functions-1",
+    "location": "functions.html#Wireframe-1",
     "page": "Functions",
-    "title": "Functions",
+    "title": "Wireframe",
     "category": "section",
-    "text": "Primitive plotting functions. These are the most atomic operations from which one can stack together more complex plotsscatter\nlines\nsurface\n\nmesh\nwireframeimage heatmap volume text poly"
+    "text": "wireframeusing MakiE\nscene = Scene(resolution = (500, 500))\nsurf = wireframe(range, range, z)\ncenter!(scene)\nsave(\"wireframe.png\", scene); nothing # hide(Image: )``` mesh image heatmap volume text poly"
 },
 
 {
@@ -94,6 +110,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Documentation",
     "category": "page",
     "text": ""
+},
+
+{
+    "location": "documentation.html#MakiE.available_marker_symbols-Tuple{}",
+    "page": "Documentation",
+    "title": "MakiE.available_marker_symbols",
+    "category": "Method",
+    "text": "available_marker_symbols()\n\nDisplays all available marker symbols\n\n\n\n"
+},
+
+{
+    "location": "documentation.html#MakiE.available_gradients-Tuple{}",
+    "page": "Documentation",
+    "title": "MakiE.available_gradients",
+    "category": "Method",
+    "text": "available_gradients()\n\nPrints all available gradient names\n\n\n\n"
 },
 
 {

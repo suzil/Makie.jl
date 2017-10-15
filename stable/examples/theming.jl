@@ -16,8 +16,8 @@ center!(scene)
 save(homedir()*"/Desktop/test.png", scene)
 
 @theme theme = begin
-    markersize = MakiE.to_markersize(0.01)
-    strokecolor = MakiE.to_color(:white)
+    markersize = to_markersize(0.01)
+    strokecolor = to_color(:white)
     strokewidth = to_float(0.01)
 end
 # this pushes all the values from theme to the plot
@@ -32,13 +32,13 @@ scatter(lift_node(x-> x .+ (Point3f0(0, 0, 1),), pos)) # will now use new theme
 function custom_theme(scene)
     @theme theme = begin
         linewidth = to_float(3)
-        colormap = MakiE.to_colormap(:BuGn)
+        colormap = to_colormap(:BuGn)
         scatter = begin
-            marker = MakiE.to_spritemarker(Circle)
+            marker = to_spritemarker(Circle)
             markersize = to_float(0.03)
-            strokecolor = MakiE.to_color(:white)
+            strokecolor = to_color(:white)
             strokewidth = to_float(0.01)
-            glowcolor = MakiE.to_color(RGBA(0, 0, 0, 0.4))
+            glowcolor = to_color(RGBA(0, 0, 0, 0.4))
             glowwidth = to_float(0.1)
         end
     end
