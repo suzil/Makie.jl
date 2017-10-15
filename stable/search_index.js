@@ -89,6 +89,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "documentation.html#",
+    "page": "Documentation",
+    "title": "Documentation",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "documentation.html#Documentation-1",
+    "page": "Documentation",
+    "title": "Documentation",
+    "category": "section",
+    "text": "\navailable_marker_symbols()\n\navailable_gradients()\n"
+},
+
+{
     "location": "backends.html#",
     "page": "Backends",
     "title": "Backends",
@@ -150,6 +166,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Option 3",
     "category": "section",
     "text": "Option 3 is pretty unique and is a real extension of MakiE's functionality as it adds a new primitive drawing type. This interface will likely change a lot in the future, since it carries quite a lot of technical debt from the design of GLAbstraction + GLVisualize, but this is how you can do it right now:You will need to create defaults for the attributes of your new visual. For a documentation on how to use this macro look at Devdocs.\nmy_attribute_convert(A::Array) = Texture(A)\nmy_attribute_convert(A::Texture) = A\nmy_attribute_convert(A) = error(\"A needs to be an array or Texture. Found: $(typeof(A))\")\n\n@default function my_drawing_type(scene, kw_args)\n    my_attribute = my_attribute_convert(my_attribute)\n    another_attribute = to_float(another_attribute) # always gets converted to Float32\nend\n\nfunction my_drawing_type(main_object::MyType, kw_args::Dict)\n    # optionally expand keyword arguments. E.g. m = (1, :white) becomes markersize = 1, markercolor = :white\n    kw_args = expand_kwargs(kw_args)\n    scene = get_global_scene()\n    # The default macro adds a _defaults to the function name\n    kw_args = my_drawing_type_defaults(scene, kw_args) # fill in and convert attributes\n\n    boundingbox = Signal(AABB(Vec3f0(0), Vec3f0(1))) # calculate a boundingbox from your data\n\n    primitive = GL_TRIANGLES\n\n    vsh = vert\"\"\"\n        {{GLSL_VERSION}}\n        in vec2 position;\n        void main(){\n            gl_Position = vec4(position, 0, 1.0);\n        }\n    \"\"\"\n\n    fsh = frag\"\"\"\n        {{GLSL_VERSION}}\n        out vec4 outColor;\n        void main() {\n            outColor = vec4(1.0, 1.0, 1.0, 1.0);\n        }\n    \"\"\"\n    program = LazyShader(vsh, fsh)\n    robj = std_renderobject(shader_uniforms, program, boundingbox, primitive, nothing)\n    # The attributes that you add to the scene should be all signals and all editable.\n    # if an attribute is fixed, don't add it to the scene\n    insert_scene!(scene, :scatter, viz, attributes)\n    attributes\nend\n"
+},
+
+{
+    "location": "themes.html#",
+    "page": "Themes",
+    "title": "Themes",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "themes.html#Themes-1",
+    "page": "Themes",
+    "title": "Themes",
+    "category": "section",
+    "text": "It's pretty easy and interactive to change the current theme.using MakiE, GeometryTypes, Colors, MacroTools\nscene = Scene()\nvx = -1:0.1:1;\nvy = -1:0.1:1;\n\nf(x, y) = (sin(x*10) + cos(y*10)) / 4\npsurf = surface(vx, vy, f)\n\npos = lift_node(psurf[:x], psurf[:y], psurf[:z]) do x, y, z\n    vec(Point3f0.(x, y', z .+ 0.5))\nend\npscat = scatter(pos)\nplines = lines(view(pos, 1:2:length(pos)))\ncenter!(scene)\nsave(\"theming_plot1.png\", scene); nothing # hide(Image: )Now, the first simple way of theming your plots/applying a series of attributes goes like this:@theme theme = begin\n    markersize = MakiE.to_markersize(0.01)\n    strokecolor = MakiE.to_color(:white)\n    strokewidth = to_float(0.01)\nend\n\n# this pushes all the values from theme to the plot\n\npush!(pscat, theme)\nsave(\"theming_plot2.png\", scene); nothing # hide(Image: )Other ways to update the values with a theme snippet:# Update the entire surface node with this\nscene[:scatter] = theme\n# Or permananently (to be more precise: just for this session) change the theme for scatter\nscene[:theme, :scatter] = theme\nscatter(lift_node(x-> x .+ (Point3f0(0, 0, 1),), pos)) # will now use new theme# Make a completely new theme\nfunction custom_theme(scene)\n    @theme theme = begin\n        linewidth = to_float(3)\n        colormap = MakiE.to_colormap(:BuGn)\n        scatter = begin\n            marker = MakiE.to_spritemarker(Circle)\n            markersize = to_float(0.03)\n            strokecolor = MakiE.to_color(:white)\n            strokewidth = to_float(0.01)\n            glowcolor = MakiE.to_color(RGBA(0, 0, 0, 0.4))\n            glowwidth = to_float(0.1)\n        end\n    end\n    # update theme values\n    scene[:theme] = theme\nend\n\n# apply it to the scene\ncustom_theme(scene)\n\n# From now everything will be plotted with new theme\npsurf = surface(vx, 1:0.1:2, psurf[:z])\nsave(\"theming_plot3.png\", scene); nothing # hide(Image: )"
 },
 
 {
