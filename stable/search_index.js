@@ -25,11 +25,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "scene.html#MakiE.Node",
+    "page": "Scene",
+    "title": "MakiE.Node",
+    "category": "Type",
+    "text": "A MakiE flavored Signal that can be used to link attributes\n\n\n\n"
+},
+
+{
+    "location": "scene.html#MakiE.Scene",
+    "page": "Scene",
+    "title": "MakiE.Scene",
+    "category": "Type",
+    "text": "A scene is a holder of attributes which are all of the type Node. A scene can contain attributes, which are themselves scenes. Nodes can be connected, since they're signals under the hood, which can be created from other nodes.\n\n\n\n"
+},
+
+{
     "location": "scene.html#Scene-1",
     "page": "Scene",
     "title": "Scene",
     "category": "section",
-    "text": ""
+    "text": "\nNode\n\nScene\n"
 },
 
 {
