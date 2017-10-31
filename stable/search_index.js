@@ -13,7 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "MakiE",
     "category": "section",
-    "text": "MakiE is a high level plotting interface for GLVisualize, with a focus on interactivity and speed.It can also be seen as a prototype for a new design of Plots.jl, since it will implement a very similar interface and incorporate a lot of the ideas.A fresh start instead of the already available GLVisualize backend for Plots.jl was needed for the following reasons:Plots.jl was written to create static plots without any interaction. This is deeply reflected in the internal designand makes it hard to integrate the high performance interaction possibilities from GLVisualize.Plots.jl has many high level plotting packages as a backend which lead to a very inconsistent design for the backends.E.g. there is no straight interface a backend needs to implement. The backend abstraction happens at a very high level and the Plots.jl design relies on the high-level backends to fill in a lot of functionality - which lead to a lot of duplicated work for the lower level backends and a lot of inconsistent behavior since the code isn't shared between backends. It also means that it is a lot of work to maintain a backend.The attributes a plot/series contains and where the default creation happens is opaque and not well documented.Sometimes it's the task of the backend to create defaults for missing attributes, sometimes Plots.jl creates the defaults. A missing attribute is signaled in too many different ways (e.g false, nothing, \"\") which then needs to be checked and filled in by the backend. This leads to making it very challenging to e.g. find the color of a line for different plot types and creates buggy, inconsistent and messy backend code.As mentioned in point 2, there is not a single consistent low level drawing API. This also influences recipes, since there is not a straight mapping to a low level drawing API and therefore it's not that easy to compose. There should be a finite set of 'atomic' drawing operations (which can't be decomposed further) which a backendneeds to implement and the rest should be implemented via recipes using those atomic operations. So once a backend implements those, it will support all of the plotting operations and only minor maintenance work needs to be done from that point on.Backend loading is done in Plots.jl via evaling the backend code. This has at 4 negative consequences:  a) Backend code can't be precompiled leading to longer load times  b) Backend dependencies are not in the Plots.jl REQUIRE  c) Backend dependencies get loaded via a function that gets evaled, so it's a bit awkward to use those dependencies in the function inside a backend  d) World age issues because of the evalPlease read the chapters Scene, Functions, Referencing, Extending, Backends and Devdocs to see how MakiE solves those issues! The code that will be moved back to Plots.jl lives in plotbase"
+    "text": "MakiE is a high level plotting interface for GLVisualize, with a focus on interactivity and speed.It can also be seen as a prototype for a new design of Plots.jl, since it will implement a very similar interface and incorporate a lot of the ideas.A fresh start instead of the already available GLVisualize backend for Plots.jl was needed for the following reasons:Plots.jl was written to create static plots without any interaction. This is deeply reflected in the internal designand makes it hard to integrate the high performance interaction possibilities from GLVisualize.Plots.jl has many high level plotting packages as a backend which lead to a very inconsistent design for the backends.E.g. there is no straight interface a backend needs to implement. The backend abstraction happens at a very high level and the Plots.jl design relies on the high-level backends to fill in a lot of functionality - which lead to a lot of duplicated work for the lower level backends and a lot of inconsistent behavior since the code isn't shared between backends. It also means that it is a lot of work to maintain a backend.The attributes a plot/series contains and where the default creation happens is opaque and not well documented.Sometimes it's the task of the backend to create defaults for missing attributes, sometimes Plots.jl creates the defaults. A missing attribute is signaled in too many different ways (e.g false, nothing, \"\") which then needs to be checked and filled in by the backend. This leads to making it very challenging to e.g. find the color of a line for different plot types and creates buggy, inconsistent and messy backend code.As mentioned in point 2, there is not a single consistent low level drawing API. This also influences recipes, since there is not a straight mapping to a low level drawing API and therefore it's not that easy to compose. There should be a finite set of 'atomic' drawing operations (which can't be decomposed further) which a backendneeds to implement and the rest should be implemented via recipes using those atomic operations. So once a backend implements those, it will support all of the plotting operations and only minor maintenance work needs to be done from that point on.Backend loading is done in Plots.jl via evaling the backend code. This has at 4 negative consequences:  a) Backend code can't be precompiled leading to longer load times  b) Backend dependencies are not in the Plots.jl REQUIRE  c) Backend dependencies get loaded via a function that gets evaled, so it's a bit awkward to use those dependencies in the function inside a backend  d) World age issues because of the evalPlease read the chapters Scene, Functions, Interaction, Extending, Backends and Devdocs to see how MakiE solves those issues! The code that will be moved back to Plots.jl lives in plotbase"
 },
 
 {
@@ -281,56 +281,56 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "referencing.html#",
-    "page": "Referencing",
-    "title": "Referencing",
+    "location": "interaction.html#",
+    "page": "Interaction",
+    "title": "Interaction",
     "category": "page",
     "text": ""
 },
 
 {
-    "location": "referencing.html#Referencing-1",
-    "page": "Referencing",
-    "title": "Referencing",
+    "location": "interaction.html#Interaction-1",
+    "page": "Interaction",
+    "title": "Interaction",
     "category": "section",
     "text": "MakiE offers a sophisticated referencing system to share attributes across the Scene in your plot. This is great for animations and saving resources - also if the backend decides to put data on the GPU you might even share those in GPU memory."
 },
 
 {
-    "location": "referencing.html#Using-Mouse-and-Time-to-animate-plots-1",
-    "page": "Referencing",
+    "location": "interaction.html#Using-Mouse-and-Time-to-animate-plots-1",
+    "page": "Interaction",
     "title": "Using Mouse and Time to animate plots",
     "category": "section",
-    "text": "The simples form is just to use getindex into a scene, which returns a life node! Which means, if you do anything with that node, your resulting data will also be life! lift_node creates a new node from a list of input nodes, which updates every time any  of the inputs updates.using MakiE\n\nscene = Scene(resolution = (500, 500))\n\nf(t, v) = (sin(v + t), cos(v + t))\n\nscatter(lift_node(t-> f.(t, linspace(0, 2pi, 50)), scene[:time]))\ncenter!(scene)\n# record a video \nio = VideoStream(scene, \".\", \"animation\")\nfor i = 1:100\n    recordframe!(io)\n    yield()\n    sleep(1/30)\nend\nfinish(io, \"mp4\")<video width=\"100%\">\n  <source src=\"animation.mp4\" type=\"video/mp4\">\n  Your browser does not support mp4. Please use a modern browser like Chrome or Firefox.\n</video>"
+    "text": "The simples form is just to use getindex into a scene, which returns a life node! Which means, if you do anything with that node, your resulting data will also be life! lift_node creates a new node from a list of input nodes, which updates every time any  of the inputs updates.using MakiE\n\nscene = Scene(resolution = (500, 500))\n\nf(t, v, s) = (sin(v + t) * s, cos(v + t) * s)\n\np1 = scatter(lift_node(t-> f.(t, linspace(0, 2pi, 50), 1), scene[:time]))\np2 = scatter(lift_node(t-> f.(t * 2.0, linspace(0, 2pi, 50), 1.5), scene[:time]))\ncenter!(scene)\nnothing\n# you can now reference to life attributes from the above plots:\n\nlines = lift_node(p1[:positions], p2[:positions]) do pos1, pos2\n    map((a, b)-> (a, b), pos1, pos2)\nend\n\nlinesegment(lines)\n\ncenter!(scene)\n# record a video \nio = VideoStream(scene, \".\", \"interaction\")\nfor i = 1:100\n    recordframe!(io)\n    yield()\n    sleep(1/40)\nend\nfinish(io, \"mp4\") # could also be gif, webm or mkv\nnothing<video width=\"100%\">\n  <source src=\"interaction.mp4\" type=\"video/mp4\">\n  Your browser does not support mp4. Please use a modern browser like Chrome or Firefox.\n</video>"
 },
 
 {
-    "location": "referencing.html#@ref-1",
-    "page": "Referencing",
+    "location": "interaction.html#@ref-1",
+    "page": "Interaction",
     "title": "@ref",
     "category": "section",
     "text": "Is just syntactic sugar for accessing a key in a scene. It might actually get deprecated, since just accessing the scene directly is convenient enough!@ref Variable = Value # Inserts Value under name Variable into Scene@ref Scene.Name1.Name2 # Syntactic sugar for Scene[:Name1, :Name2] @ref Expr1, Expr1 # Syntactic sugar for (@ref Expr1, @ref Expr2)"
 },
 
 {
-    "location": "referencing.html#Soon-to-be-implemented-1",
-    "page": "Referencing",
+    "location": "interaction.html#Soon-to-be-implemented-1",
+    "page": "Interaction",
     "title": "Soon to be implemented",
     "category": "section",
     "text": ""
 },
 
 {
-    "location": "referencing.html#Animating-and-sharing-on-the-GPU-1",
-    "page": "Referencing",
+    "location": "interaction.html#Animating-and-sharing-on-the-GPU-1",
+    "page": "Interaction",
     "title": "Animating and sharing on the GPU",
     "category": "section",
     "text": "using MakiE\n\nscene = Scene(resolution = (500, 500))\n@ref A = rand(32, 32) # if uploaded to the GPU, it will be shared on the GPU\n\nsurface(@ref A) # refer to exactly the same a in wireframe and surface plot\nwireframe((@ref A) .+ 0.5) # offsets A on the GPU based on the same data\n\nfor i = 1:10\n    # updates A - resulting in an animation of the surface and offsetted wireframe plot\n    @ref A[:, :] = rand(32, 32)\nend"
 },
 
 {
-    "location": "referencing.html#Simple-GUI-1",
-    "page": "Referencing",
+    "location": "interaction.html#Simple-GUI-1",
+    "page": "Interaction",
     "title": "Simple GUI",
     "category": "section",
     "text": "using MakiE\n\nscene = Scene()\n@ref slicer1 = slider(linspace(0, 1, 100)) # create a slider\n\n# generate some pretty data\nfunction xy_data(x,y,i)\n    x = (x - 0.5f0) * i\n    y = (y - 0.5f0) * i\n    r = sqrt(x * x + y * y)\n    Float32(sin(r) / r)\nend\n\nsurf(i, N) = Float32[xy_data(x, y, i, N) for x = linspace(0, 1, N), y = linspace(0, 1, N)]\n\nsurface(surf.(@ref slicer1, 512)) # refer to exactly the same a in wireframe and surface plot\n"
@@ -349,7 +349,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Axis",
     "title": "MakiE.axis",
     "category": "Function",
-    "text": "Creates an axis visualization for a certain bounding box.\n\nAttributes:\n\nAttribute axisnames, convert function to_text which accepts:\n\nAll text\n\n____________________\n\nAttribute visible, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute showticks, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute tickfont2d, convert function to_font which accepts:\n\nAll fonts\n\n____________________\n\nAttribute tickfont3d, convert function to_font which accepts:\n\nAll fonts\n\n____________________\n\nAttribute showaxis, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute showgrid, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute scalefuncs, convert function to_scalefunc which accepts:\n\n`Function`\n\n____________________\n\nAttribute gridcolors, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts. If Array is a Matrix it will get interpreted as an Image\n\nTuple{<: ColorLike, <: AbstractFloat} for a transparent color\n\n____________________\n\nAttribute gridthickness, convert function to_3floats which accepts:\n\nNo documentation found.\n\n`MakiE.to_3floats` is a `Function`.\n\n```\n# 2 methods for generic function \"to_3floats\":\nto_3floats(b, x::Tuple) in MakiE at /home/s/.julia/v0.6/MakiE/src/plotsbase/axis.jl:10\nto_3floats(b, x::Number) in MakiE at /home/s/.julia/v0.6/MakiE/src/plotsbase/axis.jl:11\n```\n\n____________________\n\nAttribute axiscolors, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts. If Array is a Matrix it will get interpreted as an Image\n\nTuple{<: ColorLike, <: AbstractFloat} for a transparent color\n\n____________________\n\n\n\n"
+    "text": "Creates an axis visualization for a certain bounding box.\n\nAttributes:\n\nAttribute axisnames, convert function to_text which accepts:\n\nAll text\n\n____________________\n\nAttribute visible, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute showticks, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute tickfont2d, convert function to_font which accepts:\n\nAll fonts\n\n____________________\n\nAttribute tickfont3d, convert function to_font which accepts:\n\nAll fonts\n\n____________________\n\nAttribute showaxis, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute showgrid, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute scalefuncs, convert function to_scalefunc which accepts:\n\n`Function`\n\n____________________\n\nAttribute gridcolors, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts. If Array is a Matrix it will get interpreted as an Image\n\nTuple{<: ColorLike, <: AbstractFloat} for a transparent color\n\n____________________\n\nAttribute gridthickness, convert function to_3floats which accepts:\n\n3 Numbers for each dimension\n\n____________________\n\nAttribute axiscolors, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts. If Array is a Matrix it will get interpreted as an Image\n\nTuple{<: ColorLike, <: AbstractFloat} for a transparent color\n\n____________________\n\n\n\n"
 },
 
 {
@@ -397,7 +397,31 @@ var documenterSearchIndex = {"docs": [
     "page": "Input Output",
     "title": "Input Output",
     "category": "section",
-    "text": "MakiE overloads the FileIO interface. So you can just write e.g.:save(scene, \"test.png\")\nsave(scene, \"test.jpg\")There is also the option to save a plot as a Julia File:save(scene, \"test.jl\")This will try to reproduce the plotting commands as closely as possible to recreate the current scene. You can specify if you want to save the defaults explicitly or if you not want to store them, so that whenever you change defaults and the saved code gets loaded it will take the new defaults."
+    "text": "MakiE overloads the FileIO interface. So you can just write e.g.:save(scene, \"test.png\")\nsave(scene, \"test.jpg\")There is also the option to save a plot as a Julia File (not implemented yet)save(scene, \"test.jl\")This will try to reproduce the plotting commands as closely as possible to recreate the current scene. You can specify if you want to save the defaults explicitly or if you not want to store them, so that whenever you change defaults and the saved code gets loaded it will take the new defaults."
+},
+
+{
+    "location": "output.html#MakiE.VideoStream",
+    "page": "Input Output",
+    "title": "MakiE.VideoStream",
+    "category": "Type",
+    "text": "VideoStream(scene::Scene, dir = mktempdir(), name = \"video\")\n\nreturns a stream and a buffer that you can use to not allocate for new frames. Use add_frame!(stream, window, buffer) to add new video frames to the stream. Use finish(stream) to save the video to 'dir/name.mkv'. You can also call finish(stream, \"mkv\"), finish(stream, \"mp4\"), finish(stream, \"gif\") or finish(stream, \"webm\") to convert the stream to those formats.\n\n\n\n"
+},
+
+{
+    "location": "output.html#MakiE.finish",
+    "page": "Input Output",
+    "title": "MakiE.finish",
+    "category": "Function",
+    "text": "finish(io::VideoStream, typ = \"mkv\"; remove_mkv = true)\n\nFlushes the video stream and optionally converts the file to typ which can be (mkv is default and doesn't need convert) gif, mp4 and webm. If you want to convert the original mkv to multiple formats you should choose remove_mkv = false, and remove it manually after you're done (with rm(videostream.path)) webm yields the smallest file size, mp4 and mk4 are marginally bigger and gifs are up to 6 times bigger!\n\n\n\n"
+},
+
+{
+    "location": "output.html#VideoStream-1",
+    "page": "Input Output",
+    "title": "VideoStream",
+    "category": "section",
+    "text": "\nVideoStream\nfinishusing MakiE\n\nscene = Scene(resolution = (500, 500))\n\nf(t, v, s) = (sin(v + t) * s, cos(v + t) * s, (cos(v + t) + sin(v)) * s)\n\np1 = meshscatter(lift_node(t-> f.(t, linspace(0, 2pi, 50), 1), scene[:time]))\np2 = meshscatter(lift_node(t-> f.(t * 2.0, linspace(0, 2pi, 50), 1.5), scene[:time]))\ncenter!(scene)\nnothing\n# you can now reference to life attributes from the above plots:\n\nlines = lift_node(p1[:positions], p2[:positions]) do pos1, pos2\n    map((a, b)-> (a, b), pos1, pos2)\nend\n\nlinesegment(lines, linestyle = :dot)\n\ncenter!(scene)\n# record a video \nio = VideoStream(scene, \".\", \"output_vid\")\nfor i = 1:300\n    recordframe!(io)\n    yield()\n    sleep(1/40)\nend\nfinish(io, \"mp4\") # could also be gif, webm or mkv\nnothing<video width=\"100%\">\n  <source src=\"output_vid.mp4\" type=\"video/mp4\">\n  Your browser does not support mp4. Please use a modern browser like Chrome or Firefox.\n</video>"
 },
 
 {
@@ -413,7 +437,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reflection",
     "title": "Reflection",
     "category": "section",
-    "text": "Since objects with links (as explained in Referencing) to each other, all animatable etc, a plot object can become fairly complex. To work against this, there is a rich reflection api, allowing you to look into the scene tree, display what objects are linked and interactively change the attributes."
+    "text": "Since objects with links (as explained in Interaction) to each other, all animatable etc, a plot object can become fairly complex. To work against this, there is a rich reflection api, allowing you to look into the scene tree, display what objects are linked and interactively change the attributes."
 },
 
 {
