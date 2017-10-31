@@ -26,7 +26,7 @@ for i = 1:100
     sleep(1/40)
 end
 finish(io, &quot;mp4&quot;) # could also be gif, webm or mkv
-nothing</code></pre></div><video width="100%">
+nothing</code></pre></div><video controls autoplay>
   <source src="interaction.mp4" type="video/mp4">
   Your browser does not support mp4. Please use a modern browser like Chrome or Firefox.
 </video><h3><a class="nav-anchor" id="@ref-1" href="#@ref-1"><code>@ref</code></a></h3><p>Is just syntactic sugar for accessing a key in a scene. It might actually get deprecated, since just accessing the scene directly is convenient enough!</p><p>@ref Variable = Value # Inserts Value under name Variable into Scene</p><p>@ref Scene.Name1.Name2 # Syntactic sugar for <code>Scene[:Name1, :Name2]</code> @ref Expr1, Expr1 # Syntactic sugar for <code>(@ref Expr1, @ref Expr2)</code></p><h2><a class="nav-anchor" id="Soon-to-be-implemented-1" href="#Soon-to-be-implemented-1">Soon to be implemented</a></h2><h3><a class="nav-anchor" id="Animating-and-sharing-on-the-GPU-1" href="#Animating-and-sharing-on-the-GPU-1">Animating and sharing on the GPU</a></h3><pre><code class="language-Julia">using MakiE

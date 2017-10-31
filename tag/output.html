@@ -23,10 +23,11 @@ center!(scene)
 io = VideoStream(scene, &quot;.&quot;, &quot;output_vid&quot;)
 for i = 1:300
     recordframe!(io)
-    sleep(1/40)
+    yield()
+    sleep(1/30)
 end
 finish(io, &quot;mp4&quot;) # could also be gif, webm or mkv
-nothing</code></pre></div><video width="100%">
+nothing</code></pre></div><video controls autoplay>
   <source src="output_vid.mp4" type="video/mp4">
   Your browser does not support mp4. Please use a modern browser like Chrome or Firefox.
 </video><footer><hr/><a class="previous" href="legends.html"><span class="direction">Previous</span><span class="title">Legend</span></a><a class="next" href="reflection.html"><span class="direction">Next</span><span class="title">Reflection</span></a></footer></article></body></html>
