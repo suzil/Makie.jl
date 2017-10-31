@@ -345,11 +345,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "axis.html#MakiE.axis",
+    "page": "Axis",
+    "title": "MakiE.axis",
+    "category": "Function",
+    "text": "Creates an axis visualization for a certain bounding box.\n\nAttributes:\n\nAttribute axisnames, convert function to_text which accepts:\n\nAll text\n\n____________________\n\nAttribute visible, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute showticks, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute tickfont2d, convert function to_font which accepts:\n\nAll fonts\n\n____________________\n\nAttribute tickfont3d, convert function to_font which accepts:\n\nAll fonts\n\n____________________\n\nAttribute showaxis, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute showgrid, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute scalefuncs, convert function to_scalefunc which accepts:\n\n`Function`\n\n____________________\n\nAttribute gridcolors, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts. If Array is a Matrix it will get interpreted as an Image\n\nTuple{<: ColorLike, <: AbstractFloat} for a transparent color\n\n____________________\n\nAttribute gridthickness, convert function to_3floats which accepts:\n\nNo documentation found.\n\n`MakiE.to_3floats` is a `Function`.\n\n```\n# 2 methods for generic function \"to_3floats\":\nto_3floats(b, x::Tuple) in MakiE at /home/s/.julia/v0.6/MakiE/src/plotsbase/axis.jl:10\nto_3floats(b, x::Number) in MakiE at /home/s/.julia/v0.6/MakiE/src/plotsbase/axis.jl:11\n```\n\n____________________\n\nAttribute axiscolors, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts. If Array is a Matrix it will get interpreted as an Image\n\nTuple{<: ColorLike, <: AbstractFloat} for a transparent color\n\n____________________\n\n\n\n"
+},
+
+{
     "location": "axis.html#Axis-1",
     "page": "Axis",
     "title": "Axis",
     "category": "section",
-    "text": "The axis is just a scene object, making it easy to manipulate and share between plots. Axis objects also contains the mapping you want to apply to the data and can interactively be changed. An Axis object can be created from any boundingbox and inserted into any plot."
+    "text": "The axis is just a scene object, making it easy to manipulate and share between plots. Axis objects also contains the mapping you want to apply to the data and can interactively be changed. An Axis object can be created from any boundingbox and inserted into any plot.axisusing MakiE\nscene = Scene(resolution = (500, 500))\naviz = axis(linspace(0, 2, 4), linspace(0, 2, 4))\ncenter!(scene)\nsave(\"axis2d.png\", scene); nothing # hide(Image: )using MakiE\nscene = Scene(resolution = (500, 500))\naviz = axis(linspace(0, 2, 4), linspace(0, 2, 4), linspace(0, 2, 4))\ncenter!(scene)\nsave(\"axis3d.png\", scene); nothing # hide(Image: )"
+},
+
+{
+    "location": "axis.html#Interaction-1",
+    "page": "Axis",
+    "title": "Interaction",
+    "category": "section",
+    "text": "One can quite easily interact with the attributes of the axis like with any other plot:# always tuples of xyz for most attributes that are applied to each axis\naviz[:gridcolors] = (:gray, :gray, :gray)\naviz[:axiscolors] = (:red, :black, :black)\naviz[:showticks] = (true, true, false)\nsave(\"axis3d_customized.png\", scene); nothing # hide(Image: )"
 },
 
 {
@@ -454,22 +470,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Logistical issues",
     "category": "section",
     "text": ""
-},
-
-{
-    "location": "devdocs.html#Transition-to-Plots.jl-1",
-    "page": "Devdocs",
-    "title": "Transition to Plots.jl",
-    "category": "section",
-    "text": "Considering that MakiE is designed quite differently from Plots.jl to make up for all the design problems, any transition to Plots.jl will basically mean replacing Plots.jl. I don't see how to slowly incorperate ideas from MakiE into Plots.jl without a huge amount of work. So I'd propose to let MakiE live as it's own package for a while until we can ensure, that all features from Plots.jl are covered. Then we can think about renaming MakiE, make a PR to Plots.jl to replace the internals with MakiE or simply deprecate Plots.jl and suggest to move to MakiE. "
-},
-
-{
-    "location": "devdocs.html#Other-backends-1",
-    "page": "Devdocs",
-    "title": "Other backends",
-    "category": "section",
-    "text": "I'm inclined to implement a reference backend different from GLVisualize with Cairo. This would make sense to me, because Cairo is completely orthogonal to GLVisualize and offers missing bits and pieces like PDF/SVG export. I have a plan to also include 3D features for which I've already created a prototype.  If @jheinen is on board, I'd be willing to instead create the first reference backend using GR."
 },
 
 {
