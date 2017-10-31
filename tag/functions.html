@@ -95,6 +95,8 @@ A `String` naming a color, e.g. `:black` or html style `#rrggbb`
 A Tuple or Array with elements that `to_color` accepts. If Array is a Matrix it will get interpreted as an Image
 
 Tuple{&lt;: ColorLike, &lt;: AbstractFloat} for a transparent color</code></pre><p>____________________</p><p>Attribute <code>mesh</code>, convert function <code>to_mesh</code> which accepts:</p><pre><code class="language-none">`AbstractMesh`</code></pre><p>____________________</p></div><a class="source-link" target="_blank" href="https://github.com/SimonDanisch/MakiE.jl/blob/005c88666fa064d77d79295a06a4ea25e3895321/src/plotsbase/atomics.jl#L279-L327">source</a></section><div><pre><code class="language-julia">using MakiE
+using GLVisualize: loadasset, assetpath
+
 scene = Scene(resolution = (500, 500))
 x = [0, 1, 2, 0]
 y = [0, 0, 1, 2]
@@ -108,12 +110,11 @@ indices = [1, 2, 3, 1, 3, 4, 1, 4, 2, 2, 3, 4]
 mesh(x, y, z, indices, color = color)
 r = linspace(-0.5, 2.5, 4)
 axis(r, r, r)
-center!(scene)</code></pre></div><p><img src="coloredmesh.png" alt/></p><pre><code class="language-">scene = Scene(resolution = (500, 500))
-mesh(GLVisualize.loadasset(&quot;cat.obj&quot;))
+center!(scene)</code></pre></div><p><img src="coloredmesh.png" alt/></p><div><pre><code class="language-julia">scene = Scene(resolution = (500, 500))
+mesh(loadasset(&quot;cat.obj&quot;))
 axis(r, r, r)
-center!(scene)
-save(&quot;loadedmesh.png&quot;, scene); nothing # hide</code></pre><p><img src="loadedmesh.png" alt/></p><div><pre><code class="language-julia">using MakiE, GeometryTypes, FileIO, GLVisualize
-using GLVisualize: loadasset, assetpath
+center!(scene)</code></pre></div><p><img src="loadedmesh.png" alt/></p><div><pre><code class="language-julia">using MakiE, GeometryTypes, FileIO, GLVisualize
+
 scene = Scene(resolution = (500, 500))
 cat = load(assetpath(&quot;cat.obj&quot;), GLNormalUVMesh)
 MakiE.mesh(cat, color = loadasset(&quot;diffusemap.tga&quot;))
