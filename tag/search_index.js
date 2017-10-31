@@ -301,7 +301,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Referencing",
     "title": "Using Mouse and Time to animate plots",
     "category": "section",
-    "text": "The simples form is just to use getindex into a scene, which returns a life node! Which means, if you do anything with that node, your resulting data will also be life! lift_node creates a new node from a list of input nodes, which updates every time any  of the inputs updates.using MakiE\n\nscene = Scene()\n\nf(t, v) = (sin(v + t), cos(v + t))\n\nscatter(lift_node(t-> f.(t, linspace(0, 2pi, 50)), scene[:time]))\ncenter!(scene)\n# record a video \nio = VideoStream(scene, \".\", \"animation\")\nfor i = 1:100\n    recordframe!(io)\n    yield()\n    sleep(1/30)\nend\nfinish(io, \"mp4\")<video width=\"100%\">\n  <source src=\"animation.mp4\" type=\"video/mp4\">\n  Your browser does not support mp4. Please use a modern browser like Chrome or Firefox.\n</video>"
+    "text": "The simples form is just to use getindex into a scene, which returns a life node! Which means, if you do anything with that node, your resulting data will also be life! lift_node creates a new node from a list of input nodes, which updates every time any  of the inputs updates.using MakiE\n\nscene = Scene(resolution = (500, 500))\n\nf(t, v) = (sin(v + t), cos(v + t))\n\nscatter(lift_node(t-> f.(t, linspace(0, 2pi, 50)), scene[:time]))\ncenter!(scene)\n# record a video \nio = VideoStream(scene, \".\", \"animation\")\nfor i = 1:100\n    recordframe!(io)\n    yield()\n    sleep(1/30)\nend\nfinish(io, \"mp4\")<video width=\"100%\">\n  <source src=\"animation.mp4\" type=\"video/mp4\">\n  Your browser does not support mp4. Please use a modern browser like Chrome or Firefox.\n</video>"
 },
 
 {
