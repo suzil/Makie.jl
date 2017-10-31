@@ -69,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "MakiE.scatter",
     "category": "Function",
-    "text": "scatter(x, y, z) / scatter(x, y) / scatter(positions)\n\nPlots a marker for each element in xyz/positions\n\nAttributes:\n\nAttribute x, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute y, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute positions, convert function to_positions which accepts:\n\n`NTuple{2, AbstractArray{Float}}` for 2D points\n\n`NTuple{3, AbstractArray{Float}}` for 3D points\n\n`view(AbstractArray{Point}, idx)` for a subset of points. Can be shared (so you can plot subsets of the same data)!\n\n`AbstractArray{T}` where T needs to have `length` defined and must be convertible to a Point\n\n____________________\n\nAttribute colormap, convert function to_colormap which accepts:\n\nAn `AbstractVector{T}` with any object that [to_color](@ref) accepts\n\nTuple(A, B) or Pair{A, B} with any object that [to_color](@ref) accepts\n\nA Symbol/String naming the gradient. For more on what names are available please see: `available_gradients()`\n\n____________________\n\nAttribute intensity, convert function to_intensity which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute colornorm, convert function to_colornorm which accepts:\n\nanything that can be converted to `Vec2f0` (e.g. `Tuple`, `Vector`)\n\nIf colornorm is `nothing` will default to calculate the extrema from `intensity`\n\n____________________\n\nAttribute marker, convert function to_spritemarker which accepts:\n\n`GeometryTypes.Circle(Point2(...), radius)`\n\n`Type{GeometryTypes.Circle}`\n\n`Type{GeometryTypes.Rectangle}`\n\nAny `Char`, including unicode\n\nMatrix of AbstractFloat will be interpreted as a distancefield (negative numbers outside shape, positive inside)\n\nAny AbstractMatrix{<: Colorant} or other image type\n\nA `Symbol` - Available options can be printed with `available_marker_symbols()`\n\nVector of anything that is accepted as a single marker will give each point it's own marker. Note that it needs to be a uniform vector with the same element type!\n\n____________________\n\nAttribute strokecolor, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts\n\n____________________\n\nAttribute strokewidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute glowcolor, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts\n\n____________________\n\nAttribute glowwidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute markersize, convert function to_markersize which accepts:\n\nAnything that can be converted to `Vec2f0` for x, y scale\n\n____________________\n\nAttribute rotations, convert function to_rotations which accepts:\n\n`Billboard()` for a rotation that will always face the camera\n\nAny AbstractArray which elements can be converted to Vec4 (as a quaternion x, y, z, w)\n\n____________________\n\n\n\n"
+    "text": "scatter(x, y, z) / scatter(x, y) / scatter(positions)\n\nPlots a marker for each element in xyz/positions\n\nAttributes:\n\nAttribute x, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute y, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute positions, convert function to_positions which accepts:\n\n`NTuple{2, AbstractArray{Float}}` for 2D points\n\n`NTuple{3, AbstractArray{Float}}` for 3D points\n\n`view(AbstractArray{Point}, idx)` for a subset of points. Can be shared (so you can plot subsets of the same data)!\n\n`AbstractArray{T}` where T needs to have `length` defined and must be convertible to a Point\n\n____________________\n\nAttribute colormap, convert function to_colormap which accepts:\n\nAn `AbstractVector{T}` with any object that [to_color](@ref) accepts\n\nTuple(A, B) or Pair{A, B} with any object that [to_color](@ref) accepts\n\nA Symbol/String naming the gradient. For more on what names are available please see: `available_gradients()`\n\n____________________\n\nAttribute intensity, convert function to_intensity which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute colornorm, convert function to_colornorm which accepts:\n\nanything that can be converted to `Vec2f0` (e.g. `Tuple`, `Vector`)\n\nIf colornorm is `nothing` will default to calculate the extrema from `intensity`\n\n____________________\n\nAttribute marker, convert function to_spritemarker which accepts:\n\n`GeometryTypes.Circle(Point2(...), radius)`\n\n`Type{GeometryTypes.Circle}`\n\n`Type{GeometryTypes.Rectangle}`\n\nAny `Char`, including unicode\n\nMatrix of AbstractFloat will be interpreted as a distancefield (negative numbers outside shape, positive inside)\n\nAny AbstractMatrix{<: Colorant} or other image type\n\nA `Symbol` - Available options can be printed with `available_marker_symbols()`\n\nVector of anything that is accepted as a single marker will give each point it's own marker. Note that it needs to be a uniform vector with the same element type!\n\n____________________\n\nAttribute strokecolor, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts. If Array is a Matrix it will get interpreted as an Image\n\nTuple{<: ColorLike, <: AbstractFloat} for a transparent color\n\n____________________\n\nAttribute strokewidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute glowcolor, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts. If Array is a Matrix it will get interpreted as an Image\n\nTuple{<: ColorLike, <: AbstractFloat} for a transparent color\n\n____________________\n\nAttribute glowwidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute markersize, convert function to_markersize which accepts:\n\nAnything that can be converted to `Vec2f0` for x, y scale\n\n____________________\n\nAttribute rotations, convert function to_rotations which accepts:\n\n`Billboard()` for a rotation that will always face the camera\n\nAny AbstractArray which elements can be converted to Vec4 (as a quaternion x, y, z, w)\n\n____________________\n\n\n\n"
 },
 
 {
@@ -85,7 +85,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "MakiE.lines",
     "category": "Function",
-    "text": "lines(x, y, z) / lines(x, y) / lines(positions)\n\nPlots a connected line for each element in xyz/positions\n\nAttributes:\n\nAttribute x, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute y, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute positions, convert function to_positions which accepts:\n\n`NTuple{2, AbstractArray{Float}}` for 2D points\n\n`NTuple{3, AbstractArray{Float}}` for 3D points\n\n`view(AbstractArray{Point}, idx)` for a subset of points. Can be shared (so you can plot subsets of the same data)!\n\n`AbstractArray{T}` where T needs to have `length` defined and must be convertible to a Point\n\n____________________\n\nAttribute colormap, convert function to_colormap which accepts:\n\nAn `AbstractVector{T}` with any object that [to_color](@ref) accepts\n\nTuple(A, B) or Pair{A, B} with any object that [to_color](@ref) accepts\n\nA Symbol/String naming the gradient. For more on what names are available please see: `available_gradients()`\n\n____________________\n\nAttribute intensity, convert function to_intensity which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute colornorm, convert function to_colornorm which accepts:\n\nanything that can be converted to `Vec2f0` (e.g. `Tuple`, `Vector`)\n\nIf colornorm is `nothing` will default to calculate the extrema from `intensity`\n\n____________________\n\nAttribute linewidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute linestyle, convert function to_linestyle which accepts:\n\n`Nothing` for no style\n\n`AbstractVector{<:AbstractFloat}` for denoting sequences of fill/nofill. E.g. [0.5, 0.8, 1.2] will result in 0.5 filled, 0.3 unfilled, 0.4 filled\n\nA `Symbol` equal to `:dash`, `:dot`, `:dashdot`, `:dashdotdot`\n\n____________________\n\nAttribute pattern, convert function to_pattern which accepts:\n\nSame as `to_linestyle`\n\n____________________\n\n\n\n"
+    "text": "lines(x, y, z) / lines(x, y) / lines(positions)\n\nPlots a connected line for each element in xyz/positions\n\nAttributes:\n\nAttribute x, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute y, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute positions, convert function to_positions which accepts:\n\n`NTuple{2, AbstractArray{Float}}` for 2D points\n\n`NTuple{3, AbstractArray{Float}}` for 3D points\n\n`view(AbstractArray{Point}, idx)` for a subset of points. Can be shared (so you can plot subsets of the same data)!\n\n`AbstractArray{T}` where T needs to have `length` defined and must be convertible to a Point\n\n____________________\n\nAttribute colormap, convert function to_colormap which accepts:\n\nAn `AbstractVector{T}` with any object that [to_color](@ref) accepts\n\nTuple(A, B) or Pair{A, B} with any object that [to_color](@ref) accepts\n\nA Symbol/String naming the gradient. For more on what names are available please see: `available_gradients()`\n\n____________________\n\nAttribute intensity, convert function to_intensity which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute colornorm, convert function to_colornorm which accepts:\n\nanything that can be converted to `Vec2f0` (e.g. `Tuple`, `Vector`)\n\nIf colornorm is `nothing` will default to calculate the extrema from `intensity`\n\n____________________\n\nAttribute linewidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute linestyle, convert function to_linestyle which accepts:\n\n`Nothing` for no style\n\n`AbstractVector{<:AbstractFloat}` for denoting sequences of fill/nofill. E.g. [0.5, 0.8, 1.2] will result in 0.5 filled, 0.3 unfilled, 0.4 filled. 1.0 unit is one linewidth!\n\nA `Symbol` equal to `:dash`, `:dot`, `:dashdot`, `:dashdotdot`\n\n____________________\n\nAttribute drawover, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\n\n\n"
 },
 
 {
@@ -117,7 +117,55 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Wireframe",
     "category": "section",
-    "text": "wireframeusing MakiE\nscene = Scene(resolution = (500, 500))\nsurf = wireframe(range, range, z)\ncenter!(scene)\nsave(\"wireframe.png\", scene); nothing # hide(Image: )``` mesh image heatmap volume text poly"
+    "text": "wireframeusing MakiE\nscene = Scene(resolution = (500, 500))\nsurf = wireframe(range, range, z)\ncenter!(scene)\nsave(\"wireframe.png\", scene); nothing # hide(Image: )"
+},
+
+{
+    "location": "functions.html#MakiE.mesh",
+    "page": "Functions",
+    "title": "MakiE.mesh",
+    "category": "Function",
+    "text": "mesh(x, y, z) / mesh(mesh_object) / mesh(x, y, z, faces) / mesh(xyz, faces)\n\nPlots a 3D mesh\n\nAttributes:\n\nAttribute shading, convert function to_bool which accepts:\n\nTo boolean\n\nAccepts Tuple of Bool\n\n____________________\n\nAttribute attribute_id, convert function to_attribut_id which accepts:\n\nIndex into Mesh attributes, Vector{Integer}\n\n____________________\n\nAttribute color, convert function to_color which accepts:\n\n`Colors.Colorants`\n\nA `Symbol` naming a color, e.g. `:black`\n\nA `String` naming a color, e.g. `:black` or html style `#rrggbb`\n\nA Tuple or Array with elements that `to_color` accepts. If Array is a Matrix it will get interpreted as an Image\n\nTuple{<: ColorLike, <: AbstractFloat} for a transparent color\n\n____________________\n\nAttribute mesh, convert function to_mesh which accepts:\n\n`AbstractMesh`\n\n____________________\n\n\n\n"
+},
+
+{
+    "location": "functions.html#Mesh-1",
+    "page": "Functions",
+    "title": "Mesh",
+    "category": "section",
+    "text": "meshusing MakiE\nscene = Scene(resolution = (500, 500))\nx = [0, 1, 2, 0]\ny = [0, 0, 1, 2]\nz = [0, 2, 0, 1]\ncolor = [:red, :green, :blue, :yellow]\ni = [0, 0, 0, 1]\nj = [1, 2, 3, 2]\nk = [2, 3, 1, 3]\n\nindices = [1, 2, 3, 1, 3, 4, 1, 4, 2, 2, 3, 4]\nmesh(x, y, z, indices, color = color)\nr = linspace(-0.5, 2.5, 4)\naxis(r, r, r)\ncenter!(scene)\nsave(\"coloredmesh.png\", scene); nothing # hide(Image: )scene = Scene(resolution = (500, 500))\nmesh(GLVisualize.loadasset(\"cat.obj\"))\naxis(r, r, r)\ncenter!(scene)\nsave(\"loadedmesh.png\", scene); nothing # hide(Image: )using MakiE, GeometryTypes, FileIO, GLVisualize\nusing GLVisualize: loadasset, assetpath\nscene = Scene(resolution = (500, 500))\ncat = load(assetpath(\"cat.obj\"), GLNormalUVMesh)\nMakiE.mesh(cat, color = loadasset(\"diffusemap.tga\"))\ncenter!(scene)\nsave(\"texturemesh.png\", scene); nothing # hide(Image: )"
+},
+
+{
+    "location": "functions.html#MakiE.heatmap",
+    "page": "Functions",
+    "title": "MakiE.heatmap",
+    "category": "Function",
+    "text": "heatmap(x, y, values) / heatmap(values)\n\nPlots a image on heatmap x, y (defaults to dimensions)\n\nAttributes:\n\nAttribute linewidth, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute levels, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute heatmap, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute colormap, convert function to_colormap which accepts:\n\nAn `AbstractVector{T}` with any object that [to_color](@ref) accepts\n\nTuple(A, B) or Pair{A, B} with any object that [to_color](@ref) accepts\n\nA Symbol/String naming the gradient. For more on what names are available please see: `available_gradients()`\n\n____________________\n\n____________________\n\n\n\n"
+},
+
+{
+    "location": "functions.html#Heatmap-1",
+    "page": "Functions",
+    "title": "Heatmap",
+    "category": "section",
+    "text": "heatmapusing MakiE\nscene = Scene(resolution = (500, 500))\nheatmap(rand(32, 32))\ncenter!(scene)\nsave(\"heatmap.png\", scene); nothing # hide(Image: )"
+},
+
+{
+    "location": "functions.html#MakiE.volume",
+    "page": "Functions",
+    "title": "MakiE.volume",
+    "category": "Function",
+    "text": "volume(volume_data)\n\nPlots a volume\n\nAttributes:\n\nAttribute volume, convert function to_array which accepts:\n\n`AbstractArray`\n\n____________________\n\nAttribute colormap, convert function to_colormap which accepts:\n\nAn `AbstractVector{T}` with any object that [to_color](@ref) accepts\n\nTuple(A, B) or Pair{A, B} with any object that [to_color](@ref) accepts\n\nA Symbol/String naming the gradient. For more on what names are available please see: `available_gradients()`\n\n____________________\n\n____________________\n\nAttribute algorithm, convert function to_volume_algorithm which accepts:\n\nEnum values: `IsoValue` `Absorption` `MaximumIntensityProjection` `AbsorptionRGBA` `IndexedAbsorptionRGBA`\n\nSymbol/String: iso, absorption, mip, absorptionrgba, indexedabsorption\n\n____________________\n\nAttribute absorption, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute isovalue, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\nAttribute isorange, convert function to_float which accepts:\n\nAny Object convertible to Floatingpoint\n\n____________________\n\n\n\n"
+},
+
+{
+    "location": "functions.html#Volume-1",
+    "page": "Functions",
+    "title": "Volume",
+    "category": "section",
+    "text": "volume\n#julia\nusing MakiE\nscene = Scene()\nvolume(rand(32, 32, 32), algorithm = :iso)\ncenter!(scene)\nsave(\"volume.png\", scene); nothing # hide(Image: )image\nvolume\ntext\npoly"
 },
 
 {
@@ -245,15 +293,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Referencing",
     "title": "Referencing",
     "category": "section",
-    "text": "MakiE offers a sophisticated referencing system to share attributes across the Scene in your plot. This is great for animations and saving resources - also if the backend decides to put data on the GPU you might even share those in GPU memory.This allows the following use cases:"
-},
-
-{
-    "location": "referencing.html#@ref-1",
-    "page": "Referencing",
-    "title": "@ref",
-    "category": "section",
-    "text": "@ref Variable = Value # Inserts Value under name Variable into Scene@ref Scene.Name1.Name2 # Syntactic sugar for Scene[:Name1, :Name2] @ref Expr1, Expr1 # Syntactic sugar for (@ref Expr1, @ref Expr2)"
+    "text": "MakiE offers a sophisticated referencing system to share attributes across the Scene in your plot. This is great for animations and saving resources - also if the backend decides to put data on the GPU you might even share those in GPU memory."
 },
 
 {
@@ -261,7 +301,23 @@ var documenterSearchIndex = {"docs": [
     "page": "Referencing",
     "title": "Using Mouse and Time to animate plots",
     "category": "section",
-    "text": "using MakiE\n\nscene = Scene()\n\nscatter(map((mpos, t)-> mpos .+ (sin(t), cos(t)), @ref Scene.Mouse, Scene.Time))\n"
+    "text": "The simples form is just to use getindex into a scene, which returns a life node! Which means, if you do anything with that node, your resulting data will also be life! lift_node creates a new node from a list of input nodes, which updates every time any  of the inputs updates.using MakiE\n\nscene = Scene()\n\nf(t, v) = (sin(v + t), cos(v + t))\n\nscatter(lift_node(t-> f.(t, linspace(0, 2pi, 50)), scene[:time]))\ncenter!(scene)\n# record a video \nio = VideoStream(scene, \".\", \"animation\")\nfor i = 1:100\n    recordframe!(io)\n    sleep(1/30)\nend\nfinish(io, \"mp4\")<video width=\"100%\">\n  <source src=\"animation.mp4\" type=\"video/mp4\">\n  Your browser does not support mp4. Please use a modern browser like Chrome or Firefox.\n</video>"
+},
+
+{
+    "location": "referencing.html#@ref-1",
+    "page": "Referencing",
+    "title": "@ref",
+    "category": "section",
+    "text": "Is just syntactic sugar for accessing a key in a scene. It might actually get deprecated, since just accessing the scene directly is convenient enough!@ref Variable = Value # Inserts Value under name Variable into Scene@ref Scene.Name1.Name2 # Syntactic sugar for Scene[:Name1, :Name2] @ref Expr1, Expr1 # Syntactic sugar for (@ref Expr1, @ref Expr2)"
+},
+
+{
+    "location": "referencing.html#Soon-to-be-implemented-1",
+    "page": "Referencing",
+    "title": "Soon to be implemented",
+    "category": "section",
+    "text": ""
 },
 
 {
@@ -269,7 +325,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Referencing",
     "title": "Animating and sharing on the GPU",
     "category": "section",
-    "text": "using MakiE\n\nscene = Scene()\n@ref A = rand(32, 32) # if uploaded to the GPU, it will be shared on the GPU\n\nsurface(@ref A) # refer to exactly the same a in wireframe and surface plot\nwireframe((@ref A) .+ 0.5) # offsets A on the GPU based on the same data\n\nfor i = 1:10\n    # updates A - resulting in an animation of the surface and offsetted wireframe plot\n    @ref A[:, :] = rand(32, 32)\nend"
+    "text": "using MakiE\n\nscene = Scene(resolution = (500, 500))\n@ref A = rand(32, 32) # if uploaded to the GPU, it will be shared on the GPU\n\nsurface(@ref A) # refer to exactly the same a in wireframe and surface plot\nwireframe((@ref A) .+ 0.5) # offsets A on the GPU based on the same data\n\nfor i = 1:10\n    # updates A - resulting in an animation of the surface and offsetted wireframe plot\n    @ref A[:, :] = rand(32, 32)\nend"
 },
 
 {
@@ -388,6 +444,46 @@ var documenterSearchIndex = {"docs": [
     "location": "devdocs.html#Devdocs-1",
     "page": "Devdocs",
     "title": "Devdocs",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "devdocs.html#Logistical-issues-1",
+    "page": "Devdocs",
+    "title": "Logistical issues",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "devdocs.html#Transition-to-Plots.jl-1",
+    "page": "Devdocs",
+    "title": "Transition to Plots.jl",
+    "category": "section",
+    "text": "Considering that MakiE is designed quite differently from Plots.jl to make up for all the design problems, any transition to Plots.jl will basically mean replacing Plots.jl. I don't see how to slowly incorperate ideas from MakiE into Plots.jl without a huge amount of work. So I'd propose to let MakiE live as it's own package for a while until we can ensure, that all features from Plots.jl are covered. Then we can think about renaming MakiE, make a PR to Plots.jl to replace the internals with MakiE or simply deprecate Plots.jl and suggest to move to MakiE. "
+},
+
+{
+    "location": "devdocs.html#Other-backends-1",
+    "page": "Devdocs",
+    "title": "Other backends",
+    "category": "section",
+    "text": "I'm inclined to implement a reference backend different from GLVisualize with Cairo. This would make sense to me, because Cairo is completely orthogonal to GLVisualize and offers missing bits and pieces like PDF/SVG export. I have a plan to also include 3D features for which I've already created a prototype.  If @jheinen is on board, I'd be willing to instead create the first reference backend using GR."
+},
+
+{
+    "location": "devdocs.html#Precompilation-1",
+    "page": "Devdocs",
+    "title": "Precompilation",
+    "category": "section",
+    "text": "MakiE goes with the design of backends overloading the functions like scatter(::Backend, args...) which means they can be loaded in by Julias normal code loading mechanisms and should be precompile save. MakiE also tries to be statically compilable, but this isn't as straightforward as one could think. So far it seems that all kind of globals are not save for static compilation and generated functions seem to also make problems. I'm slowly removing problematic constructs from the dependencies and try to get static compilation as quick as possible."
+},
+
+{
+    "location": "devdocs.html#TODOs-/-Up-for-grabs-1",
+    "page": "Devdocs",
+    "title": "TODOs / Up for grabs",
     "category": "section",
     "text": ""
 },
