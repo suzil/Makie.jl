@@ -11,6 +11,7 @@ center!(scene)
 io = VideoStream(scene, &quot;.&quot;, &quot;animation&quot;)
 for i = 1:100
     recordframe!(io)
+    yield()
     sleep(1/30)
 end
 finish(io, &quot;mp4&quot;)</code></pre><pre><code class="language-none">&quot;/home/s/.julia/v0.6/MakiE/docs/build/animation.mp4&quot;</code></pre></div><video width="100%">
