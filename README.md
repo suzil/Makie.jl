@@ -1,4 +1,4 @@
-[![code](https://github.com/SimonDanisch/Makie.jl/blob/master/docs/header.png?raw=true)](https://github.com/SimonDanisch/Makie.jl/blob/master/test/makie_header.jl)
+[![code](https://github.com/SimonDanisch/Makie.jl/blob/master/docs/header.png?raw=true)](https://github.com/SimonDanisch/Makie.jl/blob/master/test/longsamples/makie_header.jl)
 
 # Makie
 
