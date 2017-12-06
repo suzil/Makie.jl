@@ -7,9 +7,17 @@ values a bit!
 """
 function expand_for_glvisualize(kw_args)
     result = Dict{Symbol, Any}()
+    drawover, transparency = false, false
     for (k, v) in kw_args
         k in (:marker, :positions, always_skip...) && continue
-
+        if k == :drawover
+            drawover = v
+            continue
+        end
+        if k == :transparency
+            transparency = v
+            continue
+        end
         if k == :rotations
             k = :rotation
             v = Vec4f0(0, 0, 0, 1)
@@ -33,8 +41,9 @@ function expand_for_glvisualize(kw_args)
         if k == :positions
             k = :position
         end
-        result[k] = to_signal(v)
+        result[k] = to_typed_signal(v)
     end
+    result[:prerender] = PreRender(drawover, transparency)
     result[:fxaa] = false
     result
 end
@@ -67,13 +76,13 @@ end
 #     end
 # end
 #
-function _scatter(scene, kw_args)
-    attributes = scatter_defaults(scene, kw_args)
+function _scatter(scene, attributes)
+    attributes = scatter_defaults(scene, attributes)
     gl_data = expand_for_glvisualize(attributes)
-    shape = to_signal(attributes[:marker])
-    main = (shape, to_signal(attributes[:positions]))
-    viz = visualize(main, Style(:default), gl_data)
-    insert_scene!(scene, :scatter, viz, attributes)
+    shape = to_typed_signal(attributes[:marker])
+    main = (shape, to_typed_signal(attributes[:positions]))
+    attributes.visual[] = visualize(main, Style(:default), gl_data)
+    insert_scene!(scene, attributes)
 end
 
 function mesh2glvisualize(kw_args)
@@ -89,7 +98,8 @@ function mesh2glvisualize(kw_args)
         if k == :positions
             k = :position
         end
-        result[k] = to_signal(v)
+
+        result[k] = to_typed_signal(v)
     end
     result[:fxaa] = true
     result
@@ -98,11 +108,11 @@ end
 function _meshscatter(scene, kw_args)
     attributes = meshscatter_defaults(scene, kw_args)
     gl_data = mesh2glvisualize(attributes)
-    shape = to_signal(attributes[:marker])
-    main = (shape, to_signal(attributes[:positions]))
+    shape = to_typed_signal(attributes[:marker])
+    main = (shape, to_typed_signal(attributes[:positions]))
     viz = GLVisualize.meshparticle(main, Style(:default), gl_data)
-    viz = GLVisualize.assemble_shader(viz).children[]
-    insert_scene!(scene, :meshscatter, viz, attributes)
+    attributes.visual[] = GLVisualize.assemble_shader(viz).children[]
+    insert_scene!(scene, attributes)
 end
 
 for arg in ((:x, :y), (:x, :y, :z), (:positions,))
@@ -110,12 +120,12 @@ for arg in ((:x, :y), (:x, :y, :z), (:positions,))
         :(attributes[$(QuoteNode(elem))] = $elem)
     end
     @eval begin
-        function scatter(scene::makie, $(arg...), attributes::Dict)
+        function scatter(scene::makie, $(arg...), attributes::Attributes)
             $(insert_expr...)
             _scatter(scene, attributes)
         end
         @eval begin
-            function meshscatter(scene::makie, $(arg...), attributes::Dict)
+            function meshscatter(scene::makie, $(arg...), attributes::Attributes)
                 $(insert_expr...)
                 _meshscatter(scene, attributes)
             end

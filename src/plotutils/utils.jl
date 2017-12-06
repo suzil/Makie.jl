@@ -1,3 +1,5 @@
+const VecLike{N, T} = Union{NTuple{N, T}, StaticVector{N, T}}
+
 gpuvec(x) = GPUVector(GLBuffer(x))
 
 function to_nd(x, n::Type{Val{N}}, default) where N
@@ -11,7 +13,7 @@ end
 function to_world(point::T, cam) where T <: StaticVector
     x = to_world(
         point,
-         inv(Reactive.value(cam.view)) * inv(Reactive.value(cam.projection)),
+        inv(Reactive.value(cam.view)) * inv(Reactive.value(cam.projection)),
         T(widths(Reactive.value(cam.window_size)))
     )
     Point2f0(x[1], x[2])
@@ -113,3 +115,38 @@ function nan_extrema(array)
     end
     Vec2f0(mini, maxi)
 end
+
+# some type alias
+const RGBAf0 = RGBA{Float32}
+
+"""
+A simple iterator that returns a new, unique color when `next(::UniqueColorIter)` is called.
+"""
+mutable struct UniqueColorIter{T}
+    colors::T
+    state::Int
+end
+
+UniqueColorIter(x::Union{Symbol, String}) = UniqueColorIter(to_colormap(x), 1)
+
+function Base.getindex(iter::UniqueColorIter, idx::Int)
+    # TODO make out of bounds more graceful? But hooow
+    iter.colors[mod1(idx, length(iter.colors))]
+end
+
+Base.start(iter::UniqueColorIter) = (iter.state = 1; (iter, iter))
+
+function Base.next(iter::UniqueColorIter)
+    result = iter[iter.state]
+    iter.state += 1
+    result
+end
+# make the base interface happy
+Base.next(iter::UniqueColorIter, iter2) = (next(iter), iter2)
+
+
+"""
+Billboard attribute to always have a primitive face the camera.
+Can be used for rotation.
+"""
+immutable Billboard end

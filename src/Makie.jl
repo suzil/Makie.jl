@@ -3,6 +3,7 @@ module Makie
 
 using Colors, GeometryTypes, GLVisualize, GLAbstraction, ColorVectorSpace
 using StaticArrays, GLWindow, ModernGL, Contour, Quaternions
+using Fontconfig, FreeType, FreeTypeAbstraction
 
 using Base.Iterators: repeated, drop
 using Base: RefValue
@@ -11,15 +12,19 @@ struct Backend{B} end
 
 
 include("plotutils/utils.jl")
-
 include("plotsbase/scene.jl")
-include("plotsbase/conversions.jl")
+
+const Attributes = Scene
+
 include("plotutils/units.jl")
+include("plotsbase/conversions.jl")
+include("plotsbase/defaults.jl")
 
 const makie = Scene{:makie}
 
 include("plotutils/layout.jl")
 
+include("plotsbase/atomic_defaults.jl")
 include("plotsbase/atomics.jl")
     # The actual implementation
     include("atomics/shared.jl")
@@ -37,14 +42,16 @@ include("plotsbase/axis.jl")
 include("plotsbase/output.jl")
 include("iodevices.jl")
 include("camera2d.jl")
+include("canvas.jl")
 # include("camera3d.jl")
 
 export Scene, Node
 
-export scatter, lines, linesegment, mesh, surface, wireframe, axis
-export @ref, @theme, @default, to_node, to_value, lift_node, to_world, save
-export available_marker_symbols, available_gradients, render_frame
+export scatter, lines, linesegment, mesh, surface, wireframe, axis, volume
 
+export @defaults, to_node, to_value, lift_node, to_world, save
+export available_marker_symbols, available_gradients, render_frame
+export Theme
 # conversion
 
 export to_float, to_markersize2d, to_spritemarker, to_linestyle, to_pattern

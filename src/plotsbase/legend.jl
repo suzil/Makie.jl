@@ -4,7 +4,7 @@ Text align, e.g. :
 """
 to_textalign(b, x) = x
 
-# @default function legend(scene, kw_args)
+# @defaults function legend(scene, kw_args)
 #     backgroundcolor = to_color(backgroundcolor)
 #     strokecolor = to_color(strokecolor)
 #     strokewidth = to_float(strokewidth)
@@ -21,24 +21,7 @@ to_textalign(b, x) = x
 #     linepattern = to_positions(linepattern)
 #     scatterpattern = to_positions(scatterpattern)
 # end
-@default function legend(scene, kw_args)
-    backgroundcolor = to_color(backgroundcolor)
-    strokecolor = to_color(strokecolor)
-    strokewidth = to_float(strokewidth)
-    position = to_position(position)
-    gap = to_float(gap)
-    textgap = to_float(textgap)
-    labelwidth = to_float(labelwidth)
-    padding = to_float(padding)
-    outerpadding = to_markersize2d(outerpadding)
-    align = to_textalign(align)
-    rotation = to_rotation(rotation)
-    textcolor = to_color(textcolor)
-    textsize = to_float(textsize)
-    markersize = to_markersize2d(markersize)
-    linepattern = to_positions(linepattern)
-    scatterpattern = to_positions(scatterpattern)
-end
+
 
 
 function make_label(p, plot, labeltext, i, attributes)
@@ -107,14 +90,13 @@ function legend(scene::Scene, legends::AbstractVector{<:Scene}, labels::Abstract
         bb = mapreduce(x-> value(x.boundingbox), union, bblist)
         mini = minimum(bb)
         wx, wy, _ = widths(bb) .+ mini
-        xy = (xy .* widths(area))
         w, h = if isfinite(wx) && isfinite(wy)
             round.(Int, (wx, wy)) .+ padding
         else
             (0, 0)
         end
         # TODO check for overlaps, eliminate them!!
-        dont_touch(area, IRect(xy[1], xy[2], w, h), opad)
+        dont_touch(area, IRect(xy[1], xy[2], w, h), Vec2f0(opad))
     end
     legend_scene = Scene(
         scene, legendarea,
@@ -128,28 +110,13 @@ function legend(scene::Scene, legends::AbstractVector{<:Scene}, labels::Abstract
     lift_node((x...)-> (lscreen.stroke = x), stroke, strokecolor)
     show!.(legend_scene, legend)
     GLVisualize._view(textbuffer.robj, lscreen, camera = :fixed_pixel)
-    Scene(attributes)
+    attributes
 end
 
-
-@default function color_legend(scene, kw_args)
-    width = to_markersize2d(width)
-    backgroundcolor = to_color(backgroundcolor)
-    strokecolor = to_color(strokecolor)
-    strokewidth = to_float(strokewidth)
-    position = to_position(position)
-    textgap = to_float(textgap)
-    padding = to_markersize2d(padding)
-    outerpadding = to_markersize2d(outerpadding)
-    align = to_textalign(align)
-    rotation = to_rotation(rotation)
-    textcolor = to_color(textcolor)
-    textsize = to_float(textsize)
-end
 
 
 function legend(scene::Scene, colormap::AbstractVector{<: Colorant}, range, attributes)
-    attributes = color_legend_defaults(scene, attributes)
+    attributes = colorlegend_defaults(scene, attributes)
     attributes[:offset] = to_node(Vec3f0(0))
     attributes[:camera] = :pixel
     lscene = Scene(scene, attributes)
@@ -158,11 +125,11 @@ function legend(scene::Scene, colormap::AbstractVector{<: Colorant}, range, attr
         :padding, :textsize, :textcolor, :align, :textgap, :width, :position, :outerpadding
     ))
 
-    vertices = Point3f0[(0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0)]
+    vertices = Point3f0[(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
     mesh = GLNormalUVMesh(
         vertices = copy(vertices),
         faces = GLTriangle[(1, 2, 3), (3, 4, 1)],
-        texturecoordinates = UV{Float32}[(0, 0), (0, 1), (0, 1), (0, 0)]
+        texturecoordinates = UV{Float32}[(0, 0), (0, 0), (0, 1), (0, 1)]
     )
 
     cmap_node = lift_node(to_node(colormap)) do cmap
@@ -173,13 +140,13 @@ function legend(scene::Scene, colormap::AbstractVector{<: Colorant}, range, attr
     rect = lift_node(
                 to_node(range), textsize, textcolor, align,
                 textgap, width, padding, opad, position, area
-            ) do r, ts, tc, a, tg, w, pad, opad, position, area
+            ) do r, ts, tc, a, tg, w, pad, opad, p, area
 
         empty!(tio)
         N = length(r)
         for i = 1:N
             o1 = (i-1) / (N - 1) # 0 to 1
-            pos = Point2f0(w[1] + tg, (ts/2) + o1 * w[2]) .+ pad
+            pos = Point2f0(w[1] + tg, (ts/2) + o1 * w[2]) .+ Point2f0(pad)
             label = string(r[i])
             append!(tio, pos, label, ts, tc, Vec4f0(0, 0, 0, 1), a)
         end
@@ -189,15 +156,14 @@ function legend(scene::Scene, colormap::AbstractVector{<: Colorant}, range, attr
             w[1] + 2pad[1] + bbw + tg,
             2pad[2] + bbh + (ts/2)
         )
-        p = (position .* widths(area))
         r2 = FRect(p, rect.w, rect.h)
-        p = p .+ move_from_touch(FRect(area), r2, opad)
+        p = p .+ move_from_touch(FRect(area), r2, Vec2f0(opad))
         lscene[:offset] = Vec3f0(p[1], p[2], 0)
         rect
     end
     meshnode = lift_node(width, padding, textsize) do w, pad, ts
         mesh.vertices .= broadcast(vertices) do v
-            Point3f0(((Point2f0(v[1], v[2]) .* w) .+ Point2f0(0, ts/2) .+ pad)..., 0.0)
+            Point3f0(((Point2f0(v[1], v[2]) .* Point2f0(w)) .+ Point2f0(0, ts/2) .+ Point2f0(pad))..., 0.0)
         end
         mesh
     end
@@ -207,7 +173,7 @@ function legend(scene::Scene, colormap::AbstractVector{<: Colorant}, range, attr
         linewidth = attributes[:strokewidth],
         color = attributes[:strokecolor]
     )
-    tio.robj[:model] = lvis.visual[:model]
+    tio.robj[:model] = native_visual(lvis)[:model]
 
     GLVisualize._view(tio.robj, getscreen(scene), camera = :fixed_pixel)
     Makie.mesh(lscene, meshnode, color = cmap_node, shading = false)

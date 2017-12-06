@@ -1,19 +1,19 @@
 
-function mesh(scene::makie, x::AbstractVector, y::AbstractVector, z::AbstractVector, attributes::Dict)
+function mesh(scene::makie, x::AbstractVector, y::AbstractVector, z::AbstractVector, attributes::Attributes)
     mesh(scene, Point3f0.(x, y, z), attributes)
 end
 
-function mesh(scene::makie, xyz::AbstractVector, attributes::Dict)
+function mesh(scene::makie, xyz::AbstractVector, attributes::Attributes)
     faces = reinterpret(GLTriangle, UInt32[0:(length(xyz)-1);])
     mesh(scene, xyz, faces, attributes)
 end
 
-function mesh(scene::makie, triangle_mesh, attributes::Dict)
+function mesh(scene::makie, triangle_mesh, attributes::Attributes)
     attributes[:mesh] = triangle_mesh
     mesh_impl(scene, attributes)
 end
 
-function mesh(scene::makie, x, y, z, indices, attributes::Dict)
+function mesh(scene::makie, x, y, z, indices, attributes::Attributes)
     attributes[:x] = x
     attributes[:y] = y
     attributes[:z] = z
@@ -22,7 +22,7 @@ function mesh(scene::makie, x, y, z, indices, attributes::Dict)
 end
 
 
-function mesh(scene::makie, xyz::AbstractVector, faces::AbstractVector, attributes::Dict)
+function mesh(scene::makie, xyz::AbstractVector, faces::AbstractVector, attributes::Attributes)
     attributes[:positions] = xyz
     attributes[:indices] = faces
     mesh_impl(scene, attributes)
@@ -42,7 +42,7 @@ function mesh_2glvisualize(attributes)
             # normal colors pass through, vector of colors should be part of mesh already
             continue
         end
-        result[k] = to_signal(v)
+        result[k] = to_typed_signal(v)
     end
     result[:visible] = true
     result[:fxaa] = true
@@ -53,12 +53,12 @@ function mesh_impl(scene, attributes)
     attributes = mesh_defaults(scene, attributes)
     mesh = attributes[:mesh]
     gl_data = mesh_2glvisualize(attributes)
-    viz = visualize(to_signal(mesh), Style(:default), gl_data).children[]
-    insert_scene!(scene, :mesh, viz, attributes)
+    attributes.visual[] = visualize(to_typed_signal(mesh), Style(:default), gl_data).children[]
+    insert_scene!(scene, attributes)
 end
 
 
-function mesh(scene::makie, mesh, xyz::AbstractVector{<:Point}, attributes::Dict)
+function mesh(scene::makie, mesh, xyz::AbstractVector{<:Point}, attributes::Attributes)
     attributes[:marker] = to_node(mesh, x-> to_mesh(scene, x))
     attributes[:positions] = xyz
     meshscatter(scene, xyz, attributes)

@@ -107,11 +107,22 @@ function _unsafe_getindex!(dest::ArrayNode, src::AbstractArray, Is::Union{Real, 
 end
 
 to_node(obj::AbstractNode) = obj
+function to_node(obj::AbstractNode, f, ::Type{T}) where T
+    s = map(identity, to_signal(obj), init = v0, typ = T)
+    to_node(s, f)
+end
 function to_node(obj::AbstractNode, f)
     to_node(map(f, to_signal(obj)), f)
 end
-to_node(obj, f = identity) = to_node(Signal(f(obj)), f)
+function to_node(obj, f = identity)
+    to_node(Signal(obj), f)
+end
+function to_node(obj, f, ::Type{T}) where T
+    to_node(Signal(T, obj), f, T)
+end
 to_node(obj::Signal, f = identity) = Node(map(f, obj), f)
+to_node(obj::Signal, f, ::Type{T}) where T = Node(map(f, obj, typ = T), f)
+
 function to_node(obj::Signal{AT}, f::F = identity) where {AT <: AbstractArray, F}
     A = value(obj)
     ArrayNode{eltype(A), ndims(A), F, AT}(obj, f)
@@ -119,6 +130,9 @@ end
 
 to_value(obj::AbstractNode) = value(to_signal(obj))
 to_value(obj) = obj
+
+to_typed_signal(obj::AbstractNode) = map(identity, obj.signal) # map identity to get concrete type
+to_typed_signal(obj) = obj
 
 to_signal(obj::AbstractNode) = obj.signal
 to_signal(obj) = obj
@@ -140,6 +154,14 @@ end
         broadcast(f, a, bs...)
     end
 end
+
+@inline function Base.map(f, args::ArrayNode...)
+    lift_node(args...) do largs...
+        map(f, largs...)
+    end
+end
+
+
 function Base.append!(node::ArrayNode, values)
     v = to_value(node)
     append!(v, values)

@@ -74,16 +74,16 @@ function draw_axis(
     return
 end
 
-function axis(scene::Scene, x, y, attributes::Dict)
+function axis(scene::Scene, x, y, attributes::Attributes)
     axis(scene, to_node((x, y)), attributes)
 end
 
-function axis(scene::Scene, x, y, z, attributes::Dict)
+function axis(scene::Scene, x, y, z, attributes::Attributes)
     axis(scene, to_node((x, y, z)), attributes)
 end
 
 
-function axis(scene::Scene, ranges::Node{<: NTuple{N}}, attributes::Dict) where N
+function axis(scene::Scene, ranges::Node{<: NTuple{N}}, attributes::Attributes) where N
     textbuffer = TextBuffer(Point{N, Float32}(0))
     linebuffer = LinesegmentBuffer(Point{N, Float32}(0))
     scene = get_global_scene()
@@ -104,6 +104,6 @@ function axis(scene::Scene, ranges::Node{<: NTuple{N}}, attributes::Dict) where 
         HyperRectangle(mini3d, w)
     end)
     linebuffer.robj.boundingbox = bb
-    viz = Context(linebuffer.robj, textbuffer.robj)
-    insert_scene!(scene, :axis, viz, attributes)
+    attributes.visual[] = Context(linebuffer.robj, textbuffer.robj)
+    insert_scene!(scene, attributes)
 end

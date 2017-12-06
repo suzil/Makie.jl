@@ -19,6 +19,8 @@ Juno
 ModernGL
 GLFW 1.4.1
 
+Fontconfig
+
 @windows ImageMagick
 @linux ImageMagick
 @osx QuartzImageIO

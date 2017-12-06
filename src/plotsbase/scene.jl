@@ -1,8 +1,6 @@
 using Reactive, GLWindow, GeometryTypes, GLVisualize, Colors, ColorBrewer, GLFW
-import Base: setindex!, getindex, map, haskey
+import Base: setindex!, getindex, map, haskey, merge, merge!
 
-include("colors.jl")
-include("defaults.jl")
 
 """
 A Makie flavored Signal that can be used to link attributes
@@ -21,12 +19,17 @@ A scene is a holder of attributes which are all of the type Node.
 A scene can contain attributes, which are themselves scenes.
 Nodes can be connected, since they're signals under the hood, which can be created from other nodes.
 """
-immutable Scene{Backend}
+struct Scene{Backend}
     name::Symbol
     parent::Nullable{Scene}
     data::Dict{Symbol, Any}
-    visual
+    visual::RefValue{Any}
 end
+
+Base.start(x::Scene) = start(x.data)
+Base.next(x::Scene, idx) = next(x.data, idx)
+Base.done(x::Scene, idx) = done(x.data, idx)
+
 
 attributes(scene::Scene) = copy(scene.data)
 
@@ -46,11 +49,11 @@ function Scene(parent::Scene{Backend}, area, name = :scene, data = Dict{Symbol, 
     screen = getscreen(parent)
     newscreen = Screen(screen; area = to_signal(area), screen_kw_args...)
     data[:screen] = newscreen
-    Scene{Backend}(name, parent, data, nothing)
+    Scene{Backend}(name, parent, data, RefValue{Any}(nothing))
 end
 
 function Scene(parent::Scene{Backend}, scene::Scene, name = :scene) where Backend
-    Scene{Backend}(name, Nullable(parent), scene.data, nothing)
+    Scene{Backend}(name, Nullable(parent), scene.data, RefValue{Any}(nothing))
 end
 
 function Scene(parent::Scene{Backend}, scene::Dict, name = :scene) where Backend
@@ -58,7 +61,7 @@ function Scene(parent::Scene{Backend}, scene::Dict, name = :scene) where Backend
     for (k, v) in scene
         data[Symbol(k)] = scene_node(v)
     end
-    Scene{Backend}(name, Nullable(parent), data, nothing)
+    Scene{Backend}(name, Nullable(parent), data, RefValue{Any}(nothing))
 end
 function Scene(parent::Scene{Backend}, name::Symbol = :scene; attributes...) where Backend
     Scene(parent, Dict{Symbol, Any}(attributes), name)
@@ -66,7 +69,7 @@ end
 
 
 function (::Type{Scene{Backend}})(data::Dict, name = :scene) where Backend
-    Scene{Backend}(name, Nullable{Scene{Backend}}(), data, nothing)
+    Scene{Backend}(name, Nullable{Scene{Backend}}(), data, RefValue{Any}(nothing))
 end
 
 function (::Type{Scene{Backend}})(pair1::Pair, tail::Pair...) where Backend
@@ -87,41 +90,22 @@ and manually added via `show` by doing e.g.
     ```
 """
 function show!(scene::Scene{Backend}, childscene::Scene{Backend}) where Backend
-    camera = to_value(childscene, :camera) # should always be available!
     screen = getscreen(scene)
     cams = collect(keys(screen.cameras))
     viz = native_visual(childscene)
     viz == nothing && error("`childscene` does not contain any visual, so can't be added to `scene` with `show!`!")
-    cam = if camera == :auto
-        if isempty(cams)
-            bb = value(GLAbstraction.boundingbox(viz))
-            # infer if it's 3D
-            widths(bb)[3] ≈ 0 ? :orthographic_pixel : :perspective
-        else
-            # use the already present cam
-            first(cams)
-        end
-    elseif camera == :pixel
-        :fixed_pixel
-    elseif camera == :orthographic
-        :orthographic_pixel
-    else
-        :perspective
+    cam = get(childscene, :camera) do
+        scene[:camera]
     end
-    _view(viz, screen, camera = cam)
-    if isempty(cams)
-        scene[:camera] = camera # The camera just got created by _view
-    end
+    addcam(childscene, cam)
+    push!.(screen, extract_renderable(viz))
     childscene
 end
 
-function insert_scene!(scene::Scene{Backend}, name, viz, attributes) where Backend
-    uname = unique_predictable_name(scene, name)
-    childscene = Scene{Backend}(name, scene, attributes, viz)
+function insert_scene!(scene::Scene{Backend}, childscene) where Backend
+    uname = unique_predictable_name(scene, childscene.name)
     scene.data[uname] = childscene
-
-    to_value(childscene, :show) && show!(scene, childscene)
-
+    to_value(get(childscene, :show, false)) && show!(scene, childscene)
     childscene
 end
 
@@ -129,16 +113,18 @@ end
 Get's the backend native visual belonging to a scene. If
 it isn't a visual, it will return nothing!
 """
-native_visual(scene::Scene) = scene.visual
+native_visual(scene::Scene) = scene.visual[]
 
 function Base.delete!(scene::Scene, name::Symbol)
     if haskey(scene, name)
         obj = scene[name]
         delete!(scene.data, name)
-        visual = native_visual(obj)
-        if visual != nothing
-            # Also delete the visual from renderlist
-            delete!(rootscreen(scene), visual)
+        if isa(obj, Scene)
+            visual = native_visual(obj)
+            if visual != nothing
+                # Also delete the visual from renderlist
+                delete!(rootscreen(scene), visual)
+            end
         end
     end
 end
@@ -242,67 +228,81 @@ function Scene(;
         color = :white,
         monitor = nothing
     )
-
-    tsig = to_node(0.0)
     w = nothing
-    if !isempty(global_scene)
-        oldscene = global_scene[]
-        oldscreen = oldscene[:screen]
-        nw = GLWindow.nativewindow(oldscreen)
-        if position == nothing && isopen(nw)
-            position = GLFW.GetWindowPos(nw)
+    scene = try
+        tsig = to_node(0.0)
+        if !isempty(global_scene)
+            oldscene = global_scene[]
+            oldscreen = oldscene[:screen]
+            nw = GLWindow.nativewindow(oldscreen)
+            if position == nothing && isopen(nw)
+                position = GLFW.GetWindowPos(nw)
+            end
+            if resolution == nothing && isopen(nw)
+                resolution = GLFW.GetWindowSize(nw)
+            end
+            empty!(oldscreen)
+            empty!(oldscreen.cameras)
+            GLVisualize.empty_screens!()
+            empty!(oldscene)
+            empty!(global_scene)
+            oldscreen.color = to_color(nothing, color)
+            w = oldscreen
         end
-        if resolution == nothing && isopen(nw)
-            resolution = GLFW.GetWindowSize(nw)
+        if w == nothing || !isopen(w)
+            if resolution == nothing
+                resolution = GLWindow.standard_screen_resolution()
+            end
+            w = Screen("Makie", resolution = resolution, color = to_color(nothing, color))
+            GLWindow.add_complex_signals!(w)
         end
-        empty!(oldscreen)
-        empty!(oldscreen.cameras)
-        GLVisualize.empty_screens!()
-        empty!(oldscene)
-        empty!(global_scene)
-        oldscreen.color = to_color(nothing, color)
-        w = oldscreen
-    end
-    if w == nothing || !isopen(w)
+        if !isassigned(render_task) || istaskdone(render_task[])
+            render_task[] = @async render_loop(tsig, w)
+        end
+        nw = GLWindow.nativewindow(w)
         if resolution == nothing
             resolution = GLWindow.standard_screen_resolution()
         end
-        w = Screen("Makie", resolution = resolution, color = to_color(nothing, color))
-        GLWindow.add_complex_signals!(w)
-        render_task[] = @async render_loop(tsig, w)
-    end
+        if position == nothing
+            position = GLFW.GetWindowPos(nw)
+        end
+        GLFW.SetWindowPos(nw, position...)
+        resize!(w, Int.(resolution)...)
 
-    nw = GLWindow.nativewindow(w)
-    if resolution == nothing
-        resolution = GLWindow.standard_screen_resolution()
+        GLVisualize.add_screen(w)
+        filtered = filter(w.inputs) do k, v
+            !(k in (
+                :cursor_position,
+                :window_size,
+                :framebuffer_size
+            ))
+        end
+        dict = map(filtered) do k_v
+            k_v[1] => to_node(k_v[2])
+        end
+        dict[:screen] = w
+        push!(dict[:window_open], true)
+        dict[:time] = tsig
+        scene = Scene(dict)
+        theme(scene) # apply theme
+        add_mousebuttons(scene)
+        add_mousedrag(scene)
+        scene[:keyboardbuttons] = lift_node(scene[:buttons_pressed]) do x
+            map(Keyboard.Button, x)
+        end
+        
+        push!(global_scene, scene)
+        scene
+    catch e
+        if w != nothing
+            GLWindow.destroy!(w) # make sure we don't have a broken window when stuff errors
+        end
+        rethrow(e)
     end
-    if position == nothing
-        position = GLFW.GetWindowPos(nw)
-    end
-    GLFW.SetWindowPos(nw, position...)
-    resize!(w, Int.(resolution)...)
-
-    GLVisualize.add_screen(w)
-    filtered = filter(w.inputs) do k, v
-        !(k in (
-            :cursor_position,
-            :window_size,
-            :framebuffer_size
-        ))
-    end
-    dict = map(filtered) do k_v
-        k_v[1] => to_node(k_v[2])
-    end
-    dict[:screen] = w
-    push!(dict[:window_open], true)
-    dict[:time] = tsig
-    scene = Scene(dict)
-    theme(scene) # apply theme
-    push!(global_scene, scene)
     scene
 end
 
-Base.get(f, x::Scene, key::Symbol) = haskey(x, key) ? x[key] : f()
+Base.get(f, x::Scene, key::Symbol, tail::Symbol...) = haskey(x, key, tail...) ? x[key, tail...] : f()
 Base.get(x::Scene, key::Symbol, default) = haskey(x, key) ? x[key] : default
 
 function setindex!(s::Scene, obj, key::Symbol, tail::Symbol...)
@@ -322,7 +322,12 @@ function Base.push!(s::Scene, obj::Scene)
 end
 function setindex!(s::Scene, obj, key::Symbol)
     if haskey(s, key) # if in dictionary, just push a new value to the signal
-        push!(s[key], obj)
+        node = s[key]
+        if isa(node, Union{AbstractNode, Scene})
+            push!(node, obj)
+        else
+            s.data[key] = obj
+        end
     else
         s.data[key] = scene_node(obj)
     end
@@ -338,6 +343,16 @@ getindex(s::Scene, key::NTuple{N, Symbol}) where N = getindex(s, key...)
 getindex(s::Scene, key::Symbol) = s.data[key]
 getindex(s::Scene, key::Symbol, tail::Symbol...) = s.data[key][tail...]
 
+
+function merge(a::Scene, b::Scene)
+    Scene(get(a.parent), merge(a.data, b.data))
+end
+
+function merge!(a::Scene, b::Scene)
+    merge!(a.data, b.data)
+    a
+end
+
 function unique_predictable_name(scene, name)
     i = 1
     unique = name
@@ -350,23 +365,7 @@ end
 
 to_value(scene::Scene, s1::Symbol, srest::Symbol...) = to_value(scene[s1, srest...])
 
-function extract_fields(expr, fields = [])
-    if isa(expr, Symbol)
-        push!(fields, QuoteNode(expr))
-    elseif isa(expr, QuoteNode)
-        push!(fields, expr)
-    elseif isa(expr, Expr)
-        if expr.head == :(.)
-            push!(fields, expr.args[1])
-            return extract_fields(expr.args[2], fields)
-        elseif expr.head == :quote && length(expr.args) == 1 && isa(expr.args[1], Symbol)
-            push!(fields, expr)
-        end
-    else
-        error("Not a getfield expr: $expr, $(typeof(expr)) $(expr.head)")
-    end
-    return :(getindex($(fields...)))
-end
+
 
 
 

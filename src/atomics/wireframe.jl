@@ -1,8 +1,8 @@
-function wireframe(scene::Scene, x::AbstractVector, y::AbstractVector, z::AbstractMatrix, attributes::Dict)
+function wireframe(scene::Scene, x::AbstractVector, y::AbstractVector, z::AbstractMatrix, attributes::Attributes)
     wireframe(ngrid(x, y)..., z, attributes)
 end
 
-function wireframe(scene::Scene, x::AbstractMatrix, y::AbstractMatrix, z::AbstractMatrix, attributes::Dict)
+function wireframe(scene::Scene, x::AbstractMatrix, y::AbstractMatrix, z::AbstractMatrix, attributes::Attributes)
     if (length(x) != length(y)) || (length(y) != length(z))
         error("x, y and z must have the same length. Found: $(length(x)), $(length(y)), $(length(z))")
     end
@@ -25,11 +25,13 @@ function wireframe(scene::Scene, x::AbstractMatrix, y::AbstractMatrix, z::Abstra
             li += 2
         end
     end
+    attributes[:move_to_cam] = -0.001f0
+    attributes[:transparency] = true
     linesegment(scene, view(points, faces), attributes)
 end
 
 
-function wireframe(scene::Scene, mesh, attributes::Dict)
+function wireframe(scene::Scene, mesh, attributes::Attributes)
     mesh = to_node(mesh, x-> to_mesh(scene, x))
     points = lift_node(mesh) do g
         decompose(Point3f0, g) # get the point representation of the geometry
@@ -37,5 +39,7 @@ function wireframe(scene::Scene, mesh, attributes::Dict)
     indices = lift_node(mesh) do g
         idx = decompose(Face{2, GLIndex}, g) # get the point representation of the geometry
     end
+    attributes[:move_to_cam] = -0.001f0
+    attributes[:transparency] = true
     linesegment(scene, view(points, indices), attributes)
 end

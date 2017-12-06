@@ -1,0 +1,16 @@
+canv = Canvas(scene, cam)
+xmax, ymax = widths(scene) .* px
+ps = to_absolute.(canv, Point.(10mm:10mm:200mm, 10mm))
+ps2 = to_absolute.(canv, Point.(10mm, 10mm:10mm:200mm))
+ps3 = to_absolute.(canv, Point.(linspace(20.0px, xmax, 40), linspace(20.0px, ymax, 40)))
+ps4 = to_absolute.(canv, [Point(0.01rel, 0.01rel), Point(0.99rel, 0.01rel), Point(0.99rel, 0.99rel), Point(0.01rel, 0.99rel)])
+
+scat = scatter(ps, markersize = to_absolute(canv, 5mm))
+addcam(scat, cam)
+scat = scatter(ps2, markersize = to_absolute(canv, 10px))
+addcam(scat, cam)
+scat = scatter(ps3, markersize = 12)
+addcam(scat, cam)
+scat = scatter(ps4, markersize = to_absolute(canv, Vec(2mm, 4mm)))
+addcam(scat, cam)
+to_absolute(canv,  Vec(10px, 1px))

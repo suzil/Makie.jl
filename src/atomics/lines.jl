@@ -81,8 +81,29 @@ function extract_view(x::ArrayNode)
     p, idx
 end
 
+#cell
+
+struct PreRender{T1, T2}
+    transparency::T1
+    drawover::T2
+end
+function (pr::PreRender)()
+    if to_value(pr.drawover)
+        glDisable(GL_DEPTH_TEST)
+    else
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+    end
+    transp = to_value(pr.transparency)
+    glDepthMask(transp ? GL_FALSE : GL_TRUE)
+    glEnable(GL_CULL_FACE)
+    glCullFace(GL_BACK)
+    enabletransparency()
+end
+
 function lines_2glvisualize(kw_args)
     result = Dict{Symbol, Any}()
+    drawover, transparency = false, false
     for (k, v) in kw_args
         k in (:x, :y, :z, :scale, :rotation, :offset, :camera) && continue
         if k == :linestyle
@@ -91,9 +112,11 @@ function lines_2glvisualize(kw_args)
             continue
         end
         if k == :drawover
-            if v == true
-                result[:prerender] = ()-> glDisable(GL_DEPTH_TEST)
-            end
+            drawover = v
+            continue
+        end
+        if k == :transparency
+            transparency = v
             continue
         end
         if k == :colornorm
@@ -109,11 +132,12 @@ function lines_2glvisualize(kw_args)
             k = :vertex
             if isa(to_value(v), SubArray)
                 v, idx = extract_view(v)
-                result[:indices] = to_signal(to_index_buffer((), idx))
+                result[:indices] = to_typed_signal(to_index_buffer((), idx))
             end
         end
-        result[k] = to_signal(v)
+        result[k] = to_typed_signal(v)
     end
+    result[:prerender] = PreRender(transparency, drawover)
     result[:fxaa] = false
     result
 end
@@ -125,8 +149,8 @@ function _lines(scene, style, attributes)
     pos = data[:vertex]
     delete!(data, :vertex)
     viz = GLVisualize._default(pos, Style(style), data)
-    viz = GLVisualize.assemble_shader(viz).children[]
-    insert_scene!(scene, style, viz, attributes)
+    attributes.visual[] = GLVisualize.assemble_shader(viz).children[]
+    insert_scene!(scene, attributes)
 end
 
 
@@ -135,18 +159,18 @@ for arg in ((:x, :y), (:x, :y, :z), (:positions,))
         :(attributes[$(QuoteNode(elem))] = $elem)
     end
     @eval begin
-        function lines(scene::makie, $(arg...), attributes::Dict)
+        function lines(scene::makie, $(arg...), attributes::Attributes)
             $(insert_expr...)
             _lines(scene, :lines, attributes)
         end
-        function linesegment(scene::makie, $(arg...), attributes::Dict)
+        function linesegment(scene::makie, $(arg...), attributes::Attributes)
             $(insert_expr...)
             _lines(scene, :linesegment, attributes)
         end
     end
 end
 
-function linesegment(scene::makie, pos::AbstractVector{<: Union{Tuple{P, P}, Pair{P, P}}}, attributes::Dict) where P <: Point
+function linesegment(scene::makie, pos::AbstractVector{<: Union{Tuple{P, P}, Pair{P, P}}}, attributes::Attributes) where P <: Point
     positions = lift_node(x->reinterpret(P, x), to_node(pos))
     linesegment(scene, positions, attributes)
 end

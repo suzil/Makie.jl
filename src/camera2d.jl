@@ -3,18 +3,34 @@ using GLAbstraction: orthographicprojection, translationmatrix
 using StaticArrays
 
 const AbstractCamera = Scene
-@default function camera2d(scene, kw_args)
-    area = SimpleRectangle(0, 0, 500, 500)
-    projection = eye(Mat4f0)
-    view = eye(Mat4f0)
 
-    translationspeed = to_float(1)
-    eyeposition = Vec3f0(3)
-    lookat = Vec3f0(0)
-    upvector = Vec3f0((0, 0, 1))
-    near = to_float(10_000)
-    far = to_float(-10_000)
+
+function camera2d(scene)
+    cam = Scene(
+        :area => lift_node(FRect, scene[:window_area]),
+        :projection => eye(Mat4f0),
+        :view => eye(Mat4f0),
+        :resolution => lift_node(x->Vec2f0(widths(x)), scene[:window_area])
+    )
+    cam[:projectionview] = lift_node(*, cam, :projection, :view)
+    # Initialize projection from the area
+    Makie.update_cam!(cam, to_value(cam, :area))
+    add_zoom(cam, scene)
+    add_pan(cam, scene)
+    selection_rect(scene, cam)
+    scene.data[:camera] = cam
+    cam
 end
+
+function addcam(scat, cam::AbstractCamera)
+    for robj in extract_renderable(Makie.native_visual(scat))
+        robj[:view] = to_signal(cam[:view])
+        robj[:projection] = to_signal(cam[:projection])
+        robj[:projectionview] = to_signal(cam[:projectionview])
+        robj[:resolution] = to_signal(cam[:resolution])
+    end
+end
+
 
 wscale(screenrect, viewrect) = widths(viewrect) ./ widths(screenrect)
 
@@ -66,10 +82,10 @@ function selection_rect(
         scene,
         rect[],
         linestyle = :dot,
-        thickness = 1f0,
+        thickness = 2f0,
         color = (:black, 0.4),
         drawover = true,
-        camera = :pixel
+        camera = cam
     )
     waspressed = RefValue(false)
     dragged_rect = lift_node(scene, :mousedrag) do drag

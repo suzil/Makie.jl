@@ -15,20 +15,20 @@ function surface_2glvisualize(kw_args)
         if k == :colormap
             k = :color_map
         end
-        result[k] = to_signal(v)
+        result[k] = to_typed_signal(v)
     end
     result[:fxaa] = true
     x, y = xy
     x_is_ur, xrange = is_unitrange(to_value(x))
     y_is_ur, yrange = is_unitrange(to_value(y))
-    main = to_signal(kw_args[:z])
+    main = to_typed_signal(kw_args[:z])
     if x_is_ur && y_is_ur
         result[:ranges] = (x, y)
     else
         if isa(x, AbstractMatrix) && isa(y, AbstractMatrix)
-            main = to_signal.((x, y, main))
+            main = to_typed_signal.((x, y, main))
         elseif isa(x, AbstractVector) || isa(y, AbstractVector)
-            xy = to_signal(lift_node(x, y) do x, y
+            xy = to_typed_signal(lift_node(x, y) do x, y
                 ngrid(x, y)
             end)
             main = (map(first, xy), map(last, xy), main)
@@ -40,21 +40,21 @@ function surface_2glvisualize(kw_args)
 end
 
 
-function surface(scene::makie, x, y, z::AbstractMatrix{T}, attributes::Dict) where T <: AbstractFloat
+function surface(scene::makie, x, y, z::AbstractMatrix{T}, attributes::Attributes) where T <: AbstractFloat
     attributes[:x] = x
     attributes[:y] = y
     attributes[:z] = z
     attributes = surface_defaults(scene, attributes)
     gl_data, main = surface_2glvisualize(attributes)
-    viz = visualize(main, Style(:surface), gl_data).children[]
-    insert_scene!(scene, :surface, viz, attributes)
+    attributes.visual[] = visualize(main, Style(:surface), gl_data).children[]
+    insert_scene!(scene, attributes)
 end
 
 
-function surface(scene::makie, x::AbstractMatrix{T1}, y::AbstractMatrix{T2}, f::Function, attributes::Dict) where {T1, T2}
+function surface(scene::makie, x::AbstractMatrix{T1}, y::AbstractMatrix{T2}, f::Function, attributes::Attributes) where {T1, T2}
     if size(x) != size(y)
         error("x and y don't have the same size. Found: x: $(size(x)), y: $(size(y))")
     end
     z = f.(x, y)
-    surface(scene, x, y, z, attributes::Dict)
+    surface(scene, x, y, z, attributes::Attributes)
 end

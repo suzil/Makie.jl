@@ -61,6 +61,9 @@ function Base.empty!(tb::TextBuffer{N}) where N
     return
 end
 
+
+
+
 function Base.append!(tb::TextBuffer, startpos::StaticVector{N}, str::String, scale, color, rot, align, font = GLVisualize.defaultfont()) where N
     atlas = get_atlas(tb)
     pos = Point{N, Float32}(startpos)
@@ -118,11 +121,88 @@ function alignment2num(x::Symbol)
     0.0f0 # 0 default, or better to error?
 end
 
-struct RichText{C, R, F, P, A}
-    text::String
-    color::C
-    rotation::R
-    font::F
-    position::P
-    align::A
+
+function to_gl_text(string, startpos::VecLike{N, T}, textsize, font, align, rot) where {N, T}
+    atlas = GLVisualize.get_texture_atlas()
+    pos = Point{N, Float32}(startpos)
+    rscale = Float32(textsize)
+    positions2d = GLVisualize.calc_position(string, Point2f0(0), rscale, font, atlas)
+    toffset = GLVisualize.calc_offset(string, rscale, font, atlas)
+    aoffsetvec = Vec2f0(alignment2num.(align))
+    aoffset = align_offset(rot, Point2f0(0), positions2d[end], atlas, rscale, font, aoffsetvec)
+    aoffsetn = Point{N, Float32}(to_nd(aoffset, Val{N}, 0f0))
+    uv_offset_width = Vec4f0[GLVisualize.glyph_uv_width!(atlas, c, font) for c = string]
+    scale = Vec2f0[GLVisualize.glyph_scale!(atlas, c, font, rscale) for c = string]
+    positions = map(positions2d) do p
+        pn = qmul(rot, Point{N, Float32}(to_nd(p, Val{N}, 0f0)))
+        pn .+ (pos .+ aoffsetn)
+    end
+    positions, toffset, uv_offset_width, scale
+end
+
+
+immutable TextAttributes
+    size::Float32
+    color::RGBAf0
+    rotation::Vec4f0
+    alignment::Vec2f0
+    font::Font
+end
+
+function TextAttributes(
+        scene = global_scene();
+        size = 14,
+        color = :black,
+        rotation = Vec4f0(0, 0, 0, 1),
+        alignment = (:left, :bottom),
+        font = "default",
+    )
+    TextAttributes(
+        to_float(scene, size),
+        to_color(scene, color),
+        to_rotation(scene, rotation),
+        to_textalign(scene, alignment),
+        to_font(scene, font),
+    )
+end
+
+immutable Text
+    string::String
+    attributes::TextAttributes
+end
+
+
+Text(x; kw_args...) = Text(string(x), TextAttributes(; kw_args...))
+
+function text(
+        scene::Scene,
+        text,
+        attributes::Attributes
+    )
+    attributes[:text] = text
+    attributes = text_defaults(scene, attributes)
+    liftkeys = (:text, :position, :textsize, :font, :align, :rotation)
+    gl_text = to_signal(lift_node(to_gl_text, getindex.(attributes, liftkeys)...))
+    # unpack values from the one signal:
+    positions, offset, uv_offset_width, scale = map((1, 2, 3, 4)) do i
+        map(getindex, gl_text, Signal(i))
+    end
+
+    atlas = GLVisualize.get_texture_atlas()
+    keys = [:color, :strokecolor, :strokewidth, :rotation]
+    signals = to_typed_signal.(getindex.(attributes, keys))
+
+    attributes.visual[] = visualize(
+        (DISTANCEFIELD, positions),
+        color = signals[1],
+        stroke_color = signals[2],
+        stroke_width = signals[3],
+        rotation = signals[4],
+        scale = scale,
+        offset = offset,
+        uv_offset_width = uv_offset_width,
+        distancefield = atlas.images
+    ).children[]
+
+    insert_scene!(scene, attributes)
 end

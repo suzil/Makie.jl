@@ -1,250 +1,336 @@
 using MacroTools, Reactive
 
-attribute_doc(name, func, indent) = ""
-function attribute_doc(name, func::Symbol, indent)
-    io = IOBuffer()
-    f = getfield(Makie, func)
-    println(io, "Attribute `$name`, conversion function [`$func`](@ref)")
-    String(take!(io))
-end
 
 """
-Creates the expression that fetches the default for an attribute, converts it to a node
-and inserts it into the kw_arg dictionary
+To cut down on anonymous functions, let's create an explicit
+closure to pass the current scene to the convert function
 """
-function convert_expr(var, cfunc, args, mainfunc, fargs, dictsym)
-    scene_sym, kw_sym = fargs
-    var_sym = QuoteNode(var)
-    tmpsym = gensym("tmp")
-    if length(args) == 1 && args[1] == var
-        quote
-            $tmpsym = find_default($scene_sym, $kw_sym, $(QuoteNode(mainfunc)), $var_sym)
-            $(esc(var)) = to_node($tmpsym, x-> ($(esc(cfunc))($scene_sym, x)))
-            $dictsym[$var_sym] = $(esc(var))
-        end
-    else # case when a secondary convert function gets called, which builds up on other attributes
-        args = esc.(args)
-        quote
-            $(esc(var)) = $(esc(cfunc))($scene_sym, $(args...))
-            $dictsym[$var_sym] = $(esc(var))
-        end
-    end
+struct ConvertFun{F, Backend}
+    func::F
+    scene::Scene{Backend}
 end
 
-function process_body_element(elem, fargs, mainfunc, dictsym, kwarg_keys, indent = 1)
-    docs = []; symbols = []
-    if isa(elem, Expr) && elem.head == :kw
-        var, call = elem.args
-        @capture(call,
-            f_(args__) |
-            args__::f_
-        ) || error("Use a call or type assert on right hand side")
+(CF::ConvertFun)(value) = CF.func(CF.scene, value)
 
-        expr = convert_expr(var, f, args, mainfunc, fargs, dictsym)
-        return expr, [var], [attribute_doc(var, f, indent)]
-    end
-    if isa(elem, Expr) && elem.head == :block
-        syms = Symbol[]
-        docs = []
-        result = Expr(:block)
-        for arg in elem.args
-            expr, _syms, _docs = process_body_element(arg, fargs, mainfunc, dictsym, kwarg_keys, indent)
-            push!(result.args, expr)
-            append!(syms, _syms)
-            append!(docs, _docs)
-        end
-        return result, syms, docs
-    end
-    # If is documented
-    if isa(elem, Expr) && elem.head == :macrocall &&
-            length(elem.args) == 3 && elem.args[1].head == :core &&
-            elem.args[1].args[1] == Symbol("@doc")
-        push!(docs, elem.args[2])
-        # the expression that is documented
-        return process_body_element(elem.args[3], fargs, mainfunc, dictsym, kwarg_keys, indent)
-    end
-    # exclusive blocks
-    if isa(elem, Expr) && elem.head == :call && elem.args[1] == :xor
-        xor_expr = Expr(:block)
-        first_expr = Expr(:block)
-        current_expr = xor_expr
-        docio = IOBuffer()
-        println(docio, "## Exclusive Attribute sets:\n---\n")
-        for (i, arg) in enumerate(elem.args[2:end])
-            expression, docs, condition = if isa(arg, Expr) && arg.head == :if
-                condition_syms = arg.args[1]
-                if isa(condition_syms, Expr) && condition_syms.head == :tuple
-                    map!(QuoteNode, condition_syms.args, condition_syms.args)
-                    condition = :(all(x-> x in $kwarg_keys, $condition_syms))
-                    expression, syms, docs = process_body_element(arg.args[2], fargs, mainfunc, dictsym, kwarg_keys, indent + 1)
-                    expression, docs, condition
-                else
-                    error("Needs if (sym1, sym2, sym3), found if $(condition_syms)")
+
+function haskeys(kw_args::Void, keys...)
+    return false
+end
+
+function haskeys(kw_args::Scene, keys...)
+    all(key-> haskey(kw_args, key), keys)
+end
+
+
+function linked(scene, attributes, convert_func, keys)
+    nothing
+end
+function linked(scene::Scene, attributes::Scene, convert_func, keys)
+    attribute = last(keys)
+    value = get(attributes, attribute) do
+        # first look up in full path
+        get(scene, keys...) do
+            get(scene, :theme, attribute) do
+                root = rootscene(scene) # theme is in root!
+                get(root, keys...) do
+                    # then we look if there is a shared default
+                    get(root, :theme, attribute) do
+                        error("
+                            Can't find a default for attribute $attribute with parent $(keys[1:end-1]).
+                            This is either a bug or you deleted the default for $attribute from the theme.
+                        ")
+                    end
                 end
-            else
-                expression, syms, docs = process_body_element(arg, fargs, mainfunc, dictsym, kwarg_keys, indent + 1)
-                condition = :(any(x-> x in $kwarg_keys, $syms))
-                expression, docs, condition
             end
-            println(docio, join(docs, "\n"))
-            if i == length(elem.args[2:end])
-                println(docio, "## end\n---\n")
-            else
-                println(docio, "## or\n---\n")
-            end
-            if i == 1
-                first_expr = expression
-                # since a xor block defaults to first definition, we don't actually
-                # need to check for it's args and create an if - since it will land
-                # in the last else block anyways
-                continue
-            end
-            else_expr = Expr(:block)
-            ifelse = Expr(:if, condition, expression, else_expr)
-            push!(current_expr.args, ifelse)
-            current_expr = else_expr # now we need to insert into else
-
         end
-        # defaults to first block in the last else block
-        current_expr.args = first_expr.args
-        return xor_expr, Symbol[], [String(take!(docio))]
     end
-    found = @capture(elem,
-        (var_ = f_(args__)) |
-        (var_ = args__::f_)
-    )
-    result = if found
-        push!(symbols, var)
-        push!(docs, attribute_doc(var, f, indent))
-        convert_expr(var, f, args, mainfunc, fargs, dictsym)
-    else
-        elem
-    end
-    return result, symbols, docs
+    return attributes.data[attribute] = to_node(value, ConvertFun(convert_func, scene))
 end
 
 
 """
-    `@default function name(args...) end`
+Variant (with `attributes == nothing`) inserting a default for `attribute` into the current theme
+"""
+function default(
+        scene::Scene, attributes::Void,
+        keys::NTuple{N, Symbol},
+        convert_func, default_value
+    ) where N
+    scene[:theme, keys...] = to_node(default_value, identity, Any)
+    default_value
+end
 
-Macro that allows for concise default creations.
-From this expression:
+function default(
+        scene::Scene, attributes::Void,
+        keys::NTuple{N, Symbol},
+        convert_func
+    ) where N
+    nothing
+end
 
-    ```julia
-        @default function sprites(backend, scene, kw_args)
-            attribute = convert_function(attribute)
-            attribute2 = convert_function2(attribute, attribute2)
-        end
-    ```
 
-It creates a function `sprites_default(scene, kw_args)::Dict{Symbol, Any}`
+"""
+Generate attribute docs pushing them into `scene`/
+"""
+function default(
+        scene::Dict, attributes::Void,
+        keys::NTuple{N, Symbol},
+        convert_func, default_value = nothing # we don't care if there is no value
+    ) where N
+    func = Symbol(convert_func)
+    scene[last(keys)] = "Attribute `$(last(keys))`, conversion function [`$func`](@ref)"
+    default_value
+end
 
-Which will first look in kw_args for `:attribute`, if found it will call `convert_function(kw_args[:attribute])`
-and insert it in the returned attribute dictionary.
-If it's not found in kw_args, it will search in scene.theme.sprites for `:attribute` and if not found there it will
-search one level higher (scene.theme).
-This can be manually achieved by calling: `find_default(scene, kw_args, func, :attribute)`.
-
-The same will be done for attribute2, which also demonstrate that you can reference previously defined attributes and that you can
-use as many inputs to convert_function as you want.
-You can optionally define a doc string for an attribute like this:
-    ```julia
-        Attribute 1 is great
-        attribute = convert_fun(attribute)
-    ```
-If you don't define any doc string, it will default to the doc string of the convert function.
-
-For attributes that don't need a complex convert function, you can simply use a type
-assert:
-    ```Julia
-        attribute = to_float(attribute)
-        # will become
-        attribute = convert(Float32, find_default(scene, kw_args, sprites, :attribute))
-    ```
-
-# xor blocks - exlusive sets of attributes
-You can define blocks of exclusive attributes like so:
-    ```Julia
-    xor(
-        begin
-            color = to_color(color)
-        end,
-        begin
-            colormap = to_colormap(colormap)
-            intensity = to_intensity(intensity)
-            colornorm = to_colornorm(colornorm, intensity)
-        end
-    )
-```
-This gets desugared to:
-
-    ```julia
-    if any(x-> x in keys(kw_args), (:color, :intensity, :colornorm))
-        colormap = to_colormap(colormap)
-        intensity = to_intensity(intensity)
-        colornorm = to_colornorm(colornorm, intensity)
-    else
-        color = to_color(color)
+"""
+Default generation for non optional attributes.
+`attribute` needs to be in `attributes` and will get reinserted with the correct
+conversion function and turned into a `Node`
+Usage within the [`@defaults`](@ref) macro:
+    ```example
+    @defaultss scatter = begin
+        user_attribute = to_attribute(user_attribute)
+        # the above will desugar into
+        c = default(scene, attributes, :scatter, :user_attribute, to_attribute)
+        # which will boil down to these calls:
+        to_attribute = to_node(attributes[:user_attribute], to_attribute)
     end
     ```
-    So the first block becomes the default block if no key is in the kw_args.
-    You can also explicitely define what keys kw_args needs to contain to get selected:
-    ```julia
-    xor(
-        begin
-            color = to_color(color)
-        end,
-        if (colormap, intensity) # now kw_args needs to contain attributes colormap && intensity
-            colormap = to_colormap(colormap)
-            intensity = to_intensity(intensity)
-            colornorm = to_colornorm(colornorm, intensity)
-        end
-    )
+"""
+function default(
+        scene::Scene, attributes::Scene,
+        keys::NTuple{N, Symbol},
+        convert_func
+    ) where N
+
+    attribute = last(keys)
+    display(attributes)
+    val = get(attributes, attribute) do
+        error("
+            $attribute doesn't have a default, so it isn't optional. Please supply it!
+            you will find more information what value it accepts in [`$(Symbol(convert_func))`](@ref) and
+            possibly in the documentation of [`$(first(keys))`](@ref).
+        ")
+    end
+    return attributes.data[attribute] = to_node(val, ConvertFun(convert_func, scene))
+end
+
+"""
+Default generation for an attribute with a default in the theme.
+`attribute` doesn't need to be in `attributes` since it can be looked up in the current theme.
+The final value will get taken from `attributes` or the scenes theme, and will get inserted into
+`attributes` with the correct conversion function as a `Node`.
+Usage in [`@defaults`](@ref) macro:
+    ```example
+    @defaultss scatter = begin
+        a = to_a(0.0)
+        # the above will desugar into
+        c = default(scene, attributes, :scatter, :a, to_a, 0.0)
+        # which will boil down to these calls:
+        _c = get(attributes, :c, get(scene, (:theme, :c), get(scene, :c, error())))
+        c = to_node(_c, to_a) # node with to_a as a convert func
+    end
     ```
 """
-macro default(func)
-    @capture(func,
-        function mainfunc_(fargs__)
-            body__
+function default(
+        scene::Scene, attributes::Scene,
+        keys::NTuple{N, Symbol},
+        convert_func, val
+    ) where N
+    # First look in attributes, use last key,
+    # since that's the attributes name and attributes has no hierarchy
+    attribute = last(keys)
+    value = get(attributes, attribute) do
+        root = rootscene(scene) # theme is in root!
+        # first look up in full path
+        get(root, :theme, keys...) do
+            # then we look if there is a shared default
+            get(root, :theme, attribute) do
+                error("
+                    Can't find a default for attribute $attribute with parent $(keys[1:end-1]).
+                    This is either a bug or you deleted the default for $attribute from the theme.
+                ")
+            end
         end
-    ) || error("Please use @default with a function declaration, e.g.
-        @default function myfunc(args...)
-            ...
-        end
-    ")
+    end
+    return attributes.data[attribute] = to_node(value, ConvertFun(convert_func, scene))
+end
 
-    length(fargs) == 2 || error("Function should have 2 arguments, namely scene and kw_args. Found: $fargs")
-    docs = []
+"""
+Calculated scene node, which relies on other nodes to calculate it's value!
+It can still be overwritten by user supplied key word arguments.
+Insert into node like this:
+    ```example
+    @defaultss scatter = begin
+        a = to_a(0.0)
+        b = to_b(0.0)
+        c = calculate_func(a, b)
+        # the above will desugar into
+        c = calculated(scene, attributes, :scatter, :c, calculate_func, a, b)
+        # which will boil down to these calls:
+        c = get(attributes, :c, lift_node(calculate_func, a, b))
+    end
+    ```
+"""
+function calculated(scene::Scene, attributes::Scene, keys::NTuple{N, Symbol}, convert_func, args...) where N
+    # Attribute overwritten by user, no need to calculate it!
+    attribute = last(keys)
+    value = if haskey(attributes, attribute)
+        to_node(attributes[attribute])
+    else
+        # we need to calculate it from args - by conention, first arg is always the scene
+        lift_node(convert_func, to_node(scene), to_node.(args)...)
+    end
+    attributes[attribute] = value
+    value
+end
+
+"""
+Insert docs into `scene` Dict for the calculated attribute
+"""
+function calculated(scene::Dict, attributes::Void, keys, convert_func, args...)
+    func = Symbol(convert_func)
+    scene[last(keys)] = "Calculated attribute `$(last(keys))`, with function [`$func`](@ref)"
+end
+"""
+Theme insertion pass does nothing: calculated values need no default!
+"""
+function calculated(scene::Scene, attributes::Void, keys, convert_func, args...)
+    nothing
+end
+
+"""
+Getindex for the theme/documentation pass
+"""
+function default_getindex(x, args)
+    return nothing
+end
+
+"""
+getindex to scene, for real pass
+"""
+function default_getindex(scene::Scene, args)
+    if haskey(scene, args...)
+        return getindex(scene, args...)
+    end
+    root = rootscene(scene)
+    if haskey(root, args...)
+        return getindex(root, args...)
+    end
+    error("Incorrect link in default. Scene: $(scene.name) with the keys: $(args)")
+    return
+end
+
+function process_call(scene, attributes, keys, func, args)
+    # calculated attributes are ambigous with normal defaults, so we prefix it with calculate
+    key_tuple = Expr(:tuple, keys...)
+    if @capture(func, calculated.f_)
+        return Expr(:call, calculated, esc(scene), esc(attributes), key_tuple, esc(f), esc.(args)...)
+    end
+    if length(args) == 1
+        arg = args[1]
+        expr = Expr(:call, default, esc(scene), esc(attributes), key_tuple, esc(func))
+        if arg == last(keys).value
+            # non optional attribute, doesn't have a default value
+            return expr
+        elseif @capture(arg, ssym_.children_) # reference to scene
+            fields = extract_fields(arg)
+            # we don't need to insert this node into the theme pass, since it get's
+            # the value already from the scene. Instead of having yet another overload
+            # of default, we just manually exclude it:
+            return Expr(:call, linked, esc(scene), esc(attributes), esc(func), Expr(:tuple, fields...))
+        else # attribute with default value
+            push!(expr.args, esc(arg))
+            return expr
+        end
+    end
+    error("""
+    Not a well formed default expr. Please use either of these:
+    ```
+        a = convert_func(default) # only use one argument - needs default value
+        a = convert_func(scene.theme.attribute) # refer to values in the scene as default. Should usually refer to theme, but doesn't need to!
+        a = convert_func(a) # doesn't need a default, symbols need match
+        a = calculated.convert_func(...) # calculated something from other attributes. Arguments can be any node
+    ```
+    Found the following arguments:
+    Attributes: $attributes, keys: $keys, function: $func, arguments: $(args)
+    """)
+end
+
+function process_attribute(scene, attributes, parents, attribute, func, args)
+    keys = (parents..., QuoteNode(attribute))
+    call = process_call(scene, attributes, keys, func, args)
+    :($(esc(attribute)) = $call)
+end
+
+
+process_block(scene, attributes, parents, block::Expr) = process_block(scene, attributes, parents, block.args)
+function process_block(scene, attributes, parents, block::Vector)
     result = []
-    dictsym = gensym(:attributes)
-    kwarg_keys = gensym(:keys)
-    for elem in body
-        expr, syms, _docs = process_body_element(elem, fargs, mainfunc, dictsym, kwarg_keys)
-        push!(result, expr)
-        append!(docs, _docs)
-    end
-    io = IOBuffer()
-    for elem in docs
-        # the `    ` before Attribute get it parsed as a code block, which destroys cross references
-        println(io, replace(elem, "    Attribute", "Attribute"))
-        println(io, "\n____________________\n")
-    end
-    docstr = String(take!(io))
-    expr = quote
-        """
-        $($(docstr))
-        """
-        function $(esc(Symbol("$(mainfunc)_defaults")))($(fargs...))
-            $dictsym = Dict{Symbol, Any}()
-            $kwarg_keys = keys($(fargs[2]))
-            $(result...)
-            merge!($(fargs[2]), $dictsym)
-            return $(fargs[2])
+    for elem in block
+        expr = esc(elem)
+        if isa(elem, Expr)
+            # we only process `a = func(args...)` and if/else/elseif blocks
+            # leave rest untouched
+            if @capture(elem, attribute_ = func_(args__))
+                if isa(attribute, Symbol)
+                    # only process symbol = ...
+                    expr = process_attribute(scene, attributes, parents, attribute, func, args)
+                else
+                    expr = esc(elem)
+                end
+            elseif elem.head == :if
+                cond = esc(elem.args[1])
+                ifblock = Expr(:block, process_block(scene, attributes, parents, elem.args[2])...)
+
+                elseblock = if length(elem.args) == 3
+                    (Expr(:block, process_block(scene, attributes, parents, elem.args[3])...),)
+                else
+                    ()
+                end
+                expr = Expr(:if, cond, ifblock, elseblock...)
+            end
         end
+        push!(result, expr)
     end
-    expr
+    result
 end
 
+function _extract_fields(expr, fields = Symbol[])
+    if isa(expr, Symbol)
+        push!(fields, expr)
+    elseif isa(expr, QuoteNode)
+        _extract_fields(expr.value, fields)
+    elseif @capture(expr, a_.b_)
+        _extract_fields(a, fields)
+        _extract_fields(b, fields)
+    else
+        error("Not a getfield expr: $expr, $(typeof(expr)) $(expr.head)")
+    end
+    return fields
+end
+
+extract_fields(expr) = QuoteNode.(_extract_fields(expr))
+
+
+"""
+@defaultss scene.name = begin
+    ...
+end
+"""
+macro defaults(assignment)
+    @capture(assignment,
+        attributes_ -> parents_ = block_
+    ) || error("Please use `@defaults scene.name = begin ... end`")
+    if isa(block, Expr) && block.head == :block
+        parent_keys = extract_fields(parents)
+        scene, keys = first(parent_keys).value, parent_keys[2:end] # should always be scene.[parent.child.etc]
+        expr = Expr(:block, process_block(scene, attributes, keys, block)...)
+        expr
+    else
+        error("Please use `@defaults scene.name = begin ... end`")
+    end
+end
 
 nice_dump(x, intent = 0) = (print("    "^intent); show(x); println())
 function nice_dump(x::Expr, intent = 0)
@@ -255,10 +341,3 @@ function nice_dump(x::Expr, intent = 0)
         nice_dump(elem, intent)
     end
 end
-
-
-"""
-Billboard attribute to always have a primitive face the camera.
-Can be used for rotation.
-"""
-immutable Billboard end

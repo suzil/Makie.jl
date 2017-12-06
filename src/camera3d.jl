@@ -169,7 +169,7 @@ end
 
 
 
-@defaults function camera3d(backend, scene, kw_args)
+@defaultss function camera3d(backend, scene, kw_args)
     rotationspeed = to_float(1)
     translationspeed = to_float(1)
     eyeposition = Vec3f0(3)

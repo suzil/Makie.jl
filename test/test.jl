@@ -1,11 +1,16 @@
 using Makie, GeometryTypes, Colors
 scene = Scene()
-scatter(
-    Point3f0[(1,0,0), (0,1,0), (0,0,1)],
-    marker = [:x, :circle, :cross]
-)
 
-GLVisualize.visualize(("helo", rand(Point3f0, length("helo"))))
+scatter(scene, rand(10), rand(10), markersize = 0.1)
+scatter(scene, rand(10), rand(10), markersize = 0.1)
+center!(scene)
+pos = [Point(50px, 50px), Point(600px, 600px)]
+s = scatter(pos, markersize = 10mm, marker = :rect)
+
+s[:markersize] = 10mm
+
+s[:positions] = [Point(10px, 20px), Point(600px, 600px)]
+minimum(Makie.Units.pixel_per_mm(scene))
 
 scene[:theme][:scatter][:marker] = :cross
 center!(scene)
@@ -185,3 +190,127 @@ cd(@__DIR__)
 test1("test.png")
 
 result = test_images(VisualTest(test1, "test.png"))
+
+
+
+
+"""
+To cut down on anonymous functions, let's create an explicit
+closure to pass the current scene to the convert function
+"""
+struct ConvertFun{F, Backend}
+    func::F
+    scene::Scene{Backend}
+end
+
+(CF::ConvertFun)(value) = CF.func(CF.scene, value)
+
+
+
+function default(
+        scene::Scene, attributes::Void,
+        parent::Symbol, attribute::Symbol,
+        convert_func, default_value
+    )
+    scene[:theme, parent, attribute] = to_node(Signal(Any, default_value))
+    default_value
+end
+
+function default(
+        scene::Scene, attributes::Void,
+        parent::Symbol, attribute::Symbol,
+        convert_func
+    )
+    # No default value supplied - so we can't add anything to theme
+    nothing
+end
+
+"""
+Generate attribute docs
+"""
+function default(
+        scene::Dict, attributes::Void,
+        parent::Symbol, attribute::Symbol,
+        convert_func, val = nothing # we don't care if there is no value
+    )
+    func = Symbol(convert_func)
+    scene[attribute] = "Attribute `$attribute`, conversion function [`$func`](@ref)"
+    val
+end
+
+"""
+Default generation for non optional attributes.
+"""
+function default(
+        scene::Scene, attributes::Scene,
+        parent::Symbol, attribute::Symbol,
+        convert_func
+    )
+    # First look in attributes
+    val = get(attributes, attribute) do
+        error("
+            $attribute doesn't have a default, so it isn't optional. Please supply it!
+            you will find more information what value it accepts in [`$(Symbol(conver_func))`](@ref) and
+            possibly in the documentation of [`$(parend)`](@ref).
+        ")
+    end
+    attributes[attribute] = to_node(val, ConvertFun(convert_func, scene))
+    nothing
+end
+
+"""
+Default generation for an attribute with a default in the theme
+"""
+function default(
+        scene::Scene, attributes::Scene,
+        parent::Symbol, attribute::Symbol,
+        convert_func, val
+    )
+    # First look in attributes
+    value = get(attributes, attribute) do
+        # then in parent node of theme
+        get(scene, :theme, parent, attribute) do
+            # finally in the shared node of the theme
+            get(scene, :theme, :shared, attribute) do
+                error("
+                    Can't find a default for attribute $attribute with parent $parent.
+                    This is either a bug or you deleted the default for $attribute from the theme.
+                ")
+            end
+        end
+    end
+    attributes[attribute] = to_node(value, ConvertFun(convert_func, scene))
+end
+
+function calculated(scene::Dict, args::Void, parent, attribute, convert_func, args::Void...)
+    func = Symbol(convert_func)
+    scene[attribute] = "Calculated attribute `$attribute`, conversion function [`$func`](@ref)"
+end
+
+function calculated(scene::Scene, args::Scene, parent, attribute, convert_func, args::AbstractNode...)
+    # Attribute overwritten by user, no need to calculate it!
+    value = if haskey(args, attribute)
+        to_node(args[attribute])
+    else
+        # we need to calculate it from args - by conention, first arg is always the scene
+        lift_node(convert_func, to_node(scene), args...)
+    end
+    scene[attribute] = value
+    value
+end
+
+function shared_defaults(scene, args = nothing)
+    @default shared = begin
+        visible = default(scene, args, :shared, :visible, to_bool, true)
+        model = calculated(scene, args, :shared, :model, to_modelmatrix, scale, offset, rotation)
+
+        camera = to_camera(:auto)
+        light = to_vec3s([Vec3f0(1.0), Vec3f0(0.1), Vec3f0(0.9), Vec3f0(20)])
+
+        if haskeys(scene, args, :x, :y)
+
+        elseif haskeys(scene, args, :position)
+
+        end
+    end
+end

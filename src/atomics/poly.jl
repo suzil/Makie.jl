@@ -1,5 +1,5 @@
 
-function poly(scene::makie, points, attributes::Dict)
+function poly(scene::makie, points, attributes::Attributes)
     last(points) == first(points) && pop!(points)
     polys = GeometryTypes.split_intersections(points)
     result = []
@@ -15,7 +15,7 @@ function poly(scene::makie, points, attributes::Dict)
 end
 
 
-function shape(d, kw_args)
+function shape(d, attributes::Attributes)
     points = Plots.extract_points(d)
     result = []
     for rng in iter_segments(d[:x], d[:y])
