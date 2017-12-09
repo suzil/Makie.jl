@@ -33,9 +33,7 @@ Base.done(x::Scene, idx) = done(x.data, idx)
 
 attributes(scene::Scene) = copy(scene.data)
 
-scene_node(x) = to_node(x)
-# there is not much use in having scene being a node, besides that it's awkward to work with
-scene_node(x::Scene) = x
+
 const current_backend = Ref(:makie)
 
 function Scene(args...)
@@ -91,13 +89,24 @@ and manually added via `show` by doing e.g.
 """
 function show!(scene::Scene{Backend}, childscene::Scene{Backend}) where Backend
     screen = getscreen(scene)
-    cams = collect(keys(screen.cameras))
     viz = native_visual(childscene)
     viz == nothing && error("`childscene` does not contain any visual, so can't be added to `scene` with `show!`!")
-    cam = get(childscene, :camera) do
-        scene[:camera]
+    canvas = get(childscene, :canvas) do
+        get(scene, :canvas) do
+            error("No canvas.")
+        end
     end
-    addcam(childscene, cam)
+    lift_node(canvas) do canv
+        if canv.camera == nothing # first call
+            # bootstrapp camera
+            canv = Makie.camera2d(scene)
+            reset!(canv, Reactive.value(GLAbstraction.boundingbox(viz)), true)
+            push!(canvas, canv)
+            return nothing
+        end
+        addcam(childscene, canv.camera)
+        nothing
+    end
     push!.(screen, extract_renderable(viz))
     childscene
 end
@@ -149,6 +158,11 @@ end
 
 include("signals.jl")
 
+scene_node(x::AbstractNode) = x
+scene_node(x) = to_node(x, identity, Any)
+# there is not much use in having scene being a node, besides that it's awkward to work with
+scene_node(x::Scene) = x
+
 function Base.show(io::IO, mime::MIME"text/plain", scene::Scene)
     println(io, "Scene $(scene.name):")
     show(io, mime, scene.data)
@@ -162,10 +176,19 @@ const global_scene = Scene[]
 
 function GLAbstraction.center!(scene::Scene, border = 0.1)
     screen = scene[:screen]
-    camsym = first(keys(screen.cameras))
-    center!(screen, camsym, border = border)
+    canvas = to_value(scene, :canvas)
+    cam = canvas.camera
+    proj = to_signal(cam[:projection])
+    robjs = filter(renderlist(screen)) do robj
+        robj[:projection] == proj
+    end
+    bb = GLAbstraction.renderlist_boundingbox(robjs)
+#    bb = AABB(minimum(bb) .- border, widths(bb) .+ 2border)
+    reset!(canvas, bb, false)
+    scene[:canvas] = Makie.Canvas(scene, canvas.camera)
     scene
 end
+
 
 export center!
 
@@ -181,6 +204,12 @@ function render_frame(screen::GLWindow.Screen)
     GLWindow.reactive_run_till_now()
     GLWindow.render_frame(screen)
     GLWindow.swapbuffers(screen)
+end
+
+function sort_zindex(rlist)
+    for elem in rlist # tuple
+
+    end
 end
 
 function render_loop(tsig, screen, framerate = 1/60)
@@ -290,8 +319,21 @@ function Scene(;
         scene[:keyboardbuttons] = lift_node(scene[:buttons_pressed]) do x
             map(Keyboard.Button, x)
         end
-        
         push!(global_scene, scene)
+        # Okay here is the thing.
+        # We don't know at this point what kind of canvas we will have (2d/3d how big etc)
+        # So we have a bit of a bootstrapping problem. We solve it by inserting
+        # a canvas without camera as a node.
+        # whenever we have our first plot and know if it's 2D/3D we push a new
+        # canvas to this node. All attribute nodes are insert in this form:
+        # lift_node(scene[:canvas], node) do scene, value
+        #   convert_func(scene, value)
+        # end
+        # so whenever the canvas get's it's actually values, all conversion
+        # functions can to the correct conversions to the correct units etc.
+        # This solution is not perfect, since it will convert all attributes 2 times
+        # so we should rethink this approach
+        scene[:canvas] = to_node(Makie.Canvas(scene), identity, Any)
         scene
     catch e
         if w != nothing

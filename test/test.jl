@@ -314,3 +314,29 @@ function shared_defaults(scene, args = nothing)
         end
     end
 end
+
+using GeometryTypes, EarCut
+range = linspace(0, 2π, 400)
+x = sin.(range); y = (x->sin(2x)).(range)
+
+poly = GeometryTypes.split_intersections(Point2f0.(x, y))
+
+faces = EarCut.triangulate.(map(x->[x], poly))
+using Makie
+scene = Scene()
+
+
+w = glscreen(); @async renderloop(w)
+mesh = GLNormalMesh(map(x-> Point3f0(x[1], x[2], 0), vcat(poly...)), faces)
+_view(visualize(mesh))
+GLAbstraction.center!(scene)
+
+Pkg.add("Shapefile")
+using Shapefile, FileIO
+dir = "https://github.com/nvkelso/natural-earth-vector/raw/master/110m_physical/"
+fn = "ne_110m_land.shp"
+file = download(joinpath(dir, fn))
+shp = open(file) do fd
+    read(fd, Shapefile.Handle)
+end
+shp.shapes[1].points)

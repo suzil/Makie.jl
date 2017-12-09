@@ -13,12 +13,10 @@ function GeometryTypes.widths(x::Range)
     maxi - mini
 end
 
-
-
 function draw_axis(
         textbuffer::TextBuffer{N}, linebuffer, ranges,
         axisnames, visible, showaxis, showticks, showgrid,
-        axiscolors, gridcolors, gridthickness, tickfont
+        axiscolors, gridcolors, gridthickness, tickfont, tick_axis_gap
     ) where N
 
     empty!(textbuffer); empty!(linebuffer)
@@ -45,11 +43,11 @@ function draw_axis(
             if is2d
                 offset2 = Vec2f0(0)
             end
-            offset = -tickdir .* 0.1f0
+            offset = -tickdir .* tick_axis_gap[i]
             for tick in drop(range, 1)
                 startpos = origin .+ ((Float32(tick - range[1]) * axis_vec) .+ offset) .+ offset2
                 str = sprint(io-> print(io, round(tick, 2)))
-                append!(textbuffer, startpos, str, tickfont[i]...)
+                append!(textbuffer, startpos, str, tickfont[i])
             end
         end
         if showgrid[i]
@@ -91,7 +89,7 @@ function axis(scene::Scene, ranges::Node{<: NTuple{N}}, attributes::Attributes) 
     tickfont = N == 2 ? :tickfont2d : :tickfont3d
     names = (
         :axisnames, :visible, :showaxis, :showticks,
-        :showgrid, :axiscolors, :gridcolors, :gridthickness, tickfont
+        :showgrid, :axiscolors, :gridcolors, :gridthickness, tickfont, :tick_axis_gap
     )
     args = getindex.(attributes, names)
     lift_node(

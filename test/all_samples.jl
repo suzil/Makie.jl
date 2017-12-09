@@ -35,19 +35,19 @@ function custom_theme(scene)
 end
 
 #cell
-img = loadasset("doge.png")
-scene = Scene(resolution = (500, 500))
-
+img = loadasset("doge.png");
 display(scene)
 show(scene)
 println(scene)
+scene = Scene(resolution = (500, 500))
 
 is = image(img)
-center!(scene)
+is = image(img, offset = Vec3f0(500, 0, 0))
+center!(scene, 0.0)
 subscene = Scene(scene, Signal(SimpleRectangle(0, 0, 200, 200)))
 scatter(subscene, rand(100) * 200, rand(100) * 200, markersize = 2mm)
 center!(scene)
-
+size(img)
 #cell
 scene = Scene(resolution = (500, 500));
 
@@ -358,20 +358,22 @@ center!(scene);
 
 #cell
 using Makie, GeometryTypes
-scene = Scene(resolution = (500, 500))
-cam = Makie.camera2d(scene)
-scene[:camera, :area] = FRect(0, 0, 1, 1)
-scene[:canvas] = Makie.Canvas(scene, cam)
-
+scene = Scene(resolution = (800, 400))
 scatter(rand(100), rand(100), markersize = 2mm)
-
-
-
-x = map([:dot, :dash, :dashdot], [2, 3, 4]) do ls, lw
-    linesegment(linspace(1, 5, 100), rand(100), rand(100), linestyle = ls, linewidth = lw)
-end
-push!(x, scatter(linspace(1, 5, 100), rand(100), rand(100), markersize = 0.05))
+ax = axis(linspace(-0.1, 5.1, 4), linspace(-0.1, 1.1, 4))
 center!(scene)
+GLAbstraction.empty_shader_cache!()
+x = map([:dot, :dash, :dashdot], [2, 3, 4]) do ls, lw
+    linesegment(linspace(0, 5, 100), rand(100), linestyle = ls, linewidth = lw)
+end
+push!(x, scatter(linspace(-0.0, 5.0, 100), rand(100), markersize = 0.1))
+center!(scene)
+yield()
+center!(scene)
+
+for elem in x
+    elem[:scale] = to_value(to_value(scene, :canvas).camera, :scaling)
+end
 
 
 l = Makie.legend(x, ["attribute $i" for i in 1:4])

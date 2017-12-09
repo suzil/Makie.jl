@@ -4,22 +4,22 @@ using StaticArrays
 
 const AbstractCamera = Scene
 
-
 function camera2d(scene)
     cam = Scene(
         :area => lift_node(FRect, scene[:window_area]),
         :projection => eye(Mat4f0),
         :view => eye(Mat4f0),
-        :resolution => lift_node(x->Vec2f0(widths(x)), scene[:window_area])
+        :resolution => lift_node(x->Vec2f0(widths(x)), scene[:window_area]),
+        :scaling => Vec2f0(1)
     )
     cam[:projectionview] = lift_node(*, cam, :projection, :view)
     # Initialize projection from the area
     Makie.update_cam!(cam, to_value(cam, :area))
     add_zoom(cam, scene)
     add_pan(cam, scene)
-    selection_rect(scene, cam)
-    scene.data[:camera] = cam
-    cam
+    canvas = Canvas(scene, cam)
+    selection_rect(scene, canvas)
+    canvas
 end
 
 function addcam(scat, cam::AbstractCamera)
@@ -72,7 +72,7 @@ function camspace(cam_area, screen_area, point)
 end
 
 function selection_rect(
-        scene, cam,
+        scene, canvas,
         key = Mouse.left,
         button = Set([Keyboard.left_control, Keyboard.space])
     )
@@ -84,9 +84,11 @@ function selection_rect(
         linestyle = :dot,
         thickness = 2f0,
         color = (:black, 0.4),
+        transparency = false,
         drawover = true,
-        camera = cam
+        canvas = canvas
     )
+    cam = canvas.camera
     waspressed = RefValue(false)
     dragged_rect = lift_node(scene, :mousedrag) do drag
         if ispressed(scene, key) && ispressed(scene, button)
@@ -186,21 +188,22 @@ function add_zoom(cam::AbstractCamera, scene)
     end
 end
 
-function reset!(cam::AbstractCamera, boundingbox, preserveratio = true)
-    w1 = widths(boundingbox)
-    if preserveratio
-        w2 = widths(cam[Screen][Area])
-        ratio = w2 ./ w1
-        w1 = if ratio[1] > ratio[2]
-            s = w2[1] ./ w2[2]
-            Vec2f0(s * w1[2], w1[2])
+function reset!(canvas, boundingbox, preserveratio = true)
+    cam = canvas.camera
+    w, h, _ = widths(boundingbox)
+    w1 = Vec2f0(w, h)
+    w2 = widths(canvas.pixel)
+    w2norm = normalize(w2)
+    wsame = w2norm .* maximum(w1)
+    if !preserveratio
+        s = if w1[1] < w1[2]
+            Vec2f0(wsame[1] / w1[1] / w2norm[1], 1)
         else
-            s = w2[2] ./ w2[1]
-            Vec2f0(w1[1], s * w1[1])
+            Vec2f0(1, wsame[2] / w1[2] / w2norm[2])
         end
+        cam[:scaling] = s
     end
-    p = minimum(w1) .* 0.001 # 2mm padding
-    update_cam!(cam, FRect(-p, -p, w1 .+ 2p))
+    update_cam!(cam, FRect(minimum(boundingbox), wsame))
     return
 end
 

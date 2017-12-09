@@ -55,12 +55,12 @@ to_float(scene, x) = Float32(to_absolute(scene, x))
 """
 2 Numbers for each dimension
 """
-to_2floats(scene, x) = to_ndimensions(scene, NTuple{2, Float32}, x)
+to_2floats(scene, x) = to_ndimensions(scene, NTuple{2, Float32}, to_absolute(scene, x))
 
 """
 3 Numbers for each dimension
 """
-to_3floats(scene, x) = to_ndimensions(scene, NTuple{3, Float32}, x)
+to_3floats(scene, x) = to_ndimensions(scene, NTuple{3, Float32},  to_absolute(scene, x))
 
 
 """
@@ -272,6 +272,19 @@ to_font(scene, x::Font) = x
 function to_font(scene, x)
     error("Please use a string like \"Helvetica\" or a font loaded with FreeType!. Found: $x")
 end
+
+
+function to_textattribute(scene, x::NTuple{5, Any})
+    TextAttributes(scene, x...)
+end
+function to_textattribute(scene, x::Tuple)
+    to_textattribute.(scene, x)
+end
+
+"""
+Text align, e.g. :
+"""
+to_textalign(b, x::Tuple{Symbol, Symbol}) = Vec2f0(alignment2num.(x))
 
 to_string(scene, x::String) = x
 to_string(scene, x) = string(x)

@@ -1,6 +1,5 @@
 using MacroTools, Reactive
 
-
 """
 To cut down on anonymous functions, let's create an explicit
 closure to pass the current scene to the convert function
@@ -21,13 +20,16 @@ function haskeys(kw_args::Scene, keys...)
     all(key-> haskey(kw_args, key), keys)
 end
 
+#=
 
-function linked(scene, attributes, convert_func, keys)
-    nothing
-end
+Default functions that are getting called when filling out the defaults for a scene
+
+They are dispatched with scene::Scene, attributes::Scene
+=#
+
 function linked(scene::Scene, attributes::Scene, convert_func, keys)
     attribute = last(keys)
-    value = get(attributes, attribute) do
+    node = get(attributes, attribute) do
         # first look up in full path
         get(scene, keys...) do
             get(scene, :theme, attribute) do
@@ -44,42 +46,10 @@ function linked(scene::Scene, attributes::Scene, convert_func, keys)
             end
         end
     end
-    return attributes.data[attribute] = to_node(value, ConvertFun(convert_func, scene))
-end
 
-
-"""
-Variant (with `attributes == nothing`) inserting a default for `attribute` into the current theme
-"""
-function default(
-        scene::Scene, attributes::Void,
-        keys::NTuple{N, Symbol},
-        convert_func, default_value
-    ) where N
-    scene[:theme, keys...] = to_node(default_value, identity, Any)
-    default_value
-end
-
-function default(
-        scene::Scene, attributes::Void,
-        keys::NTuple{N, Symbol},
-        convert_func
-    ) where N
-    nothing
-end
-
-
-"""
-Generate attribute docs pushing them into `scene`/
-"""
-function default(
-        scene::Dict, attributes::Void,
-        keys::NTuple{N, Symbol},
-        convert_func, default_value = nothing # we don't care if there is no value
-    ) where N
-    func = Symbol(convert_func)
-    scene[last(keys)] = "Attribute `$(last(keys))`, conversion function [`$func`](@ref)"
-    default_value
+    return attributes.data[attribute] = lift_node(scene[:canvas], node; convert = ConvertFun(convert_func, scene)) do canvas, value
+        convert_func(scene, value)
+    end
 end
 
 """
@@ -104,15 +74,16 @@ function default(
     ) where N
 
     attribute = last(keys)
-    display(attributes)
-    val = get(attributes, attribute) do
+    node = get(attributes, attribute) do
         error("
             $attribute doesn't have a default, so it isn't optional. Please supply it!
             you will find more information what value it accepts in [`$(Symbol(convert_func))`](@ref) and
             possibly in the documentation of [`$(first(keys))`](@ref).
         ")
     end
-    return attributes.data[attribute] = to_node(val, ConvertFun(convert_func, scene))
+    return attributes.data[attribute] = lift_node(scene[:canvas], node; convert = ConvertFun(convert_func, scene)) do canvas, value
+        convert_func(scene, value)
+    end
 end
 
 """
@@ -140,7 +111,7 @@ function default(
     # First look in attributes, use last key,
     # since that's the attributes name and attributes has no hierarchy
     attribute = last(keys)
-    value = get(attributes, attribute) do
+    node = get(attributes, attribute) do
         root = rootscene(scene) # theme is in root!
         # first look up in full path
         get(root, :theme, keys...) do
@@ -153,7 +124,9 @@ function default(
             end
         end
     end
-    return attributes.data[attribute] = to_node(value, ConvertFun(convert_func, scene))
+    return attributes.data[attribute] = lift_node(scene[:canvas], node; convert = ConvertFun(convert_func, scene)) do canvas, value
+        convert_func(scene, value)
+    end
 end
 
 """
@@ -175,51 +148,76 @@ Insert into node like this:
 function calculated(scene::Scene, attributes::Scene, keys::NTuple{N, Symbol}, convert_func, args...) where N
     # Attribute overwritten by user, no need to calculate it!
     attribute = last(keys)
-    value = if haskey(attributes, attribute)
-        to_node(attributes[attribute])
+    node = if haskey(attributes, attribute)
+        lift_node(scene[:canvas], attributes[attribute]; convert = ConvertFun(convert_func, scene)) do canvas, val
+            convert_func(scene, val)
+        end
     else
         # we need to calculate it from args - by conention, first arg is always the scene
-        lift_node(convert_func, to_node(scene), to_node.(args)...)
+        lift_node(scene[:canvas], args...; convert = ConvertFun(convert_func, scene)) do canvas, args...
+            convert_func(scene, args...)
+        end
     end
-    attributes[attribute] = value
-    value
+    attributes[attribute] = node
+end
+
+
+#=
+
+Default functions that are getting called when filling in the theme values
+
+They are dispatched with scene::Scene, attributes::Void <- since we don't have any attributes to fill
+=#
+
+"""
+Variant (with `attributes == nothing`) inserting a default for `attribute` into the current theme
+"""
+function default(
+        scene::Scene, attributes::Void,
+        keys::NTuple{N, Symbol},
+        convert_func, default_value
+    ) where N
+    scene[:theme, keys...] = to_node(default_value, identity, Any)
+    default_value
+end
+# If no default value is given, we don't need to insert anything into the theme
+default(scene::Scene, attributes::Void, keys::NTuple{N, Symbol}, convert_func) where N = nothing
+linked(scene::Scene, attributes::Void, convert_func, keys) = nothing
+calculated(scene::Scene, attributes::Void, keys, convert_func, args...) = nothing
+
+#=
+
+Default functions that are getting called when putting together the docs for an attribute
+
+They are dispatched with docs::Dict, attributes::Void <- since we don't have any attributes to fill
+with the docs::Dict getting filled with a docstring for each attribute
+=#
+
+"""
+Generate attribute docs pushing them into `scene`
+"""
+function default(
+        docs::Dict, attributes::Void,
+        keys::NTuple{N, Symbol},
+        convert_func, default_value = nothing # we don't care if there is no value
+    ) where N
+    func = Symbol(convert_func)
+    docs[last(keys)] = "Attribute `$(last(keys))`, conversion function [`$func`](@ref)"
+    default_value
 end
 
 """
 Insert docs into `scene` Dict for the calculated attribute
 """
-function calculated(scene::Dict, attributes::Void, keys, convert_func, args...)
+function calculated(docs::Dict, attributes::Void, keys, convert_func, args...)
     func = Symbol(convert_func)
-    scene[last(keys)] = "Calculated attribute `$(last(keys))`, with function [`$func`](@ref)"
+    docs[last(keys)] = "Calculated attribute `$(last(keys))`, with function [`$func`](@ref)"
 end
-"""
-Theme insertion pass does nothing: calculated values need no default!
-"""
-function calculated(scene::Scene, attributes::Void, keys, convert_func, args...)
-    nothing
+function linked(docs::Dict, attributes::Void, convert_func, keys)
+    func = Symbol(convert_func)
+    docs[last(keys)] = "Linked attribute from `$(join(keys, "."))`, with function [`$func`](@ref)"
 end
 
-"""
-Getindex for the theme/documentation pass
-"""
-function default_getindex(x, args)
-    return nothing
-end
-
-"""
-getindex to scene, for real pass
-"""
-function default_getindex(scene::Scene, args)
-    if haskey(scene, args...)
-        return getindex(scene, args...)
-    end
-    root = rootscene(scene)
-    if haskey(root, args...)
-        return getindex(root, args...)
-    end
-    error("Incorrect link in default. Scene: $(scene.name) with the keys: $(args)")
-    return
-end
 
 function process_call(scene, attributes, keys, func, args)
     # calculated attributes are ambigous with normal defaults, so we prefix it with calculate

@@ -1,8 +1,4 @@
 
-"""
-Text align, e.g. :
-"""
-to_textalign(b, x) = x
 
 # @defaults function legend(scene, kw_args)
 #     backgroundcolor = to_color(backgroundcolor)

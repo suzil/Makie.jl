@@ -280,10 +280,14 @@ function axis_defaults(scene, kw_args)
         qmul(qmul(q2, q1), qrotation(Vec3f0(0, 1, 0), 1pi))
     )
 
-    tickalign = (
+    tickalign3d = (
         (:hcenter, :left), # x axis
         (:right, :vcenter), # y axis
         (:right, :vcenter), # z axis
+    )
+    tickalign2d = (
+        (:center, :top),
+        (:right, :center)
     )
     dark_text = RGBAf0(0.0, 0.0, 0.0, 0.4)
 
@@ -294,8 +298,8 @@ function axis_defaults(scene, kw_args)
 
     _axisnames = map(x-> ("$x Axis", 0.1, dark_text, Vec4f0(0,0,0,1), (:center, :bottom)), (:X, :Y, :Z))
     _showticks = ntuple(i-> true, 3)
-    _tickfont3d = ntuple(i-> (0.1, RGBAf0(0.5, 0.5, 0.5, 0.6), tickrotations[i], tickalign[i]), 3)
-    _tickfont2d = ntuple(i-> (0.1, RGBAf0(0.5, 0.5, 0.5, 0.6), Vec4f0(0,0,0,1), tickalign[i]), 2)
+    _tickfont3d = ntuple(i-> (6mm, RGBAf0(0.5, 0.5, 0.5, 0.6), tickrotations[i], tickalign3d[i], "default"), 3)
+    _tickfont2d = ntuple(i-> (6mm, RGBAf0(0.5, 0.5, 0.5, 0.6), Vec4f0(0,0,0,1), tickalign2d[i], "default"), 2)
     _showaxis = ntuple(i-> true, 3)
     _showgrid = ntuple(i-> true, 3)
 
@@ -303,8 +307,11 @@ function axis_defaults(scene, kw_args)
         axisnames = to_text(_axisnames)
 
         showticks = to_bool(_showticks)
-        tickfont2d = to_font(_tickfont2d)
-        tickfont3d = to_font(_tickfont3d)
+
+        tick_axis_gap = to_3floats(2mm)
+
+        tickfont2d = to_textattribute(_tickfont2d)
+        tickfont3d = to_textattribute(_tickfont3d)
         showaxis = to_bool(_showaxis)
         showgrid = to_bool(_showgrid)
 

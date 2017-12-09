@@ -105,7 +105,7 @@ function lines_2glvisualize(kw_args)
     result = Dict{Symbol, Any}()
     drawover, transparency = false, false
     for (k, v) in kw_args
-        k in (:x, :y, :z, :scale, :rotation, :offset, :camera) && continue
+        k in (:x, :y, :z, :scale, :rotation, :offset, :canvas) && continue
         if k == :linestyle
             # TODO implement pattern as signal
             result[:pattern] = to_value(v)
@@ -141,7 +141,6 @@ function lines_2glvisualize(kw_args)
     result[:fxaa] = false
     result
 end
-
 
 function _lines(scene, style, attributes)
     attributes = lines_defaults(scene, attributes)

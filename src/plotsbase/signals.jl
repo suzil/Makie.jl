@@ -56,10 +56,10 @@ Registers a callback to `nodes`, which calls function `f` whenever any node in `
 `f` will get the values of each `node` as an argument, so basically `f(to_value.(nodes))`.
 Returns a new node which is the result of `f` applied to the updated `nodes`.
 """
-function lift_node(f, nodes::AbstractNode...)
+function lift_node(f, nodes...; convert = identity)
     args = to_signal.(nodes)
     s = foreach(f, args...)
-    to_node(s)
+    to_node(s, convert)
 end
 
 function push!(x::AbstractNode, value)
@@ -108,7 +108,7 @@ end
 
 to_node(obj::AbstractNode) = obj
 function to_node(obj::AbstractNode, f, ::Type{T}) where T
-    s = map(identity, to_signal(obj), init = v0, typ = T)
+    s = map(identity, to_signal(obj), typ = T)
     to_node(s, f)
 end
 function to_node(obj::AbstractNode, f)
@@ -134,8 +134,9 @@ to_value(obj) = obj
 to_typed_signal(obj::AbstractNode) = map(identity, obj.signal) # map identity to get concrete type
 to_typed_signal(obj) = obj
 
+to_signal(obj::Signal) = obj
 to_signal(obj::AbstractNode) = obj.signal
-to_signal(obj) = obj
+to_signal(obj) = Signal(obj)
 
 # Called by Base broadcasting mechanisms (in place and out of place)
 Base.Broadcast._containertype(::Type{<:ArrayNode}) = ArrayNode
