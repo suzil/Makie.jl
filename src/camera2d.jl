@@ -4,9 +4,10 @@ using StaticArrays
 
 const AbstractCamera = Scene
 
-function camera2d(scene)
+function camera2d(scene, area = scene[:window_area])
+    area_pres = ratio_preserving_rect(to_value(area), to_value(scene, :window_area))
     cam = Scene(
-        :area => lift_node(FRect, scene[:window_area]),
+        :area => lift_node(FRect, to_node(area_pres)),
         :projection => eye(Mat4f0),
         :view => eye(Mat4f0),
         :resolution => lift_node(x->Vec2f0(widths(x)), scene[:window_area]),
@@ -188,9 +189,17 @@ function add_zoom(cam::AbstractCamera, scene)
     end
 end
 
+function ratio_preserving_rect(current, target)
+    w1 = widths(current)
+    w2 = widths(target)
+    w2norm = normalize(w2)
+    wsame = w2norm .* maximum(w1)
+    FRect(minimum(current), wsame)
+end
+
 function reset!(canvas, boundingbox, preserveratio = true)
     cam = canvas.camera
-    w, h, _ = widths(boundingbox)
+    w, h = widths(boundingbox)
     w1 = Vec2f0(w, h)
     w2 = widths(canvas.pixel)
     w2norm = normalize(w2)

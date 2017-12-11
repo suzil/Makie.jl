@@ -75,6 +75,11 @@ function (::Type{Scene{Backend}})(pair1::Pair, tail::Pair...) where Backend
     Scene(Dict(map(x-> x[1] => scene_node(x[2]), args)))
 end
 
+# I/O without libuv, for use after STDOUT is finalized
+raw_print(msg::AbstractString...) =
+    ccall(:write, Cssize_t, (Cint, Cstring, Csize_t), 1, join(msg), length(join(msg)))
+raw_println(msg::AbstractString...) = raw_print(msg..., "\n")
+
 
 """
 Inserts `childscene` into the scene graph of `scene`. This will display the
@@ -88,6 +93,7 @@ and manually added via `show` by doing e.g.
     ```
 """
 function show!(scene::Scene{Backend}, childscene::Scene{Backend}) where Backend
+
     screen = getscreen(scene)
     viz = native_visual(childscene)
     viz == nothing && error("`childscene` does not contain any visual, so can't be added to `scene` with `show!`!")
@@ -99,8 +105,8 @@ function show!(scene::Scene{Backend}, childscene::Scene{Backend}) where Backend
     lift_node(canvas) do canv
         if canv.camera == nothing # first call
             # bootstrapp camera
-            canv = Makie.camera2d(scene)
-            reset!(canv, Reactive.value(GLAbstraction.boundingbox(viz)), true)
+            initial_bb = data_boundingbox(childscene)
+            canv = Makie.camera2d(scene, initial_bb)
             push!(canvas, canv)
             return nothing
         end

@@ -16,41 +16,39 @@ function xy_data(x, y)
 end
 
 function custom_theme(scene)
-    theme = Theme(
-        :transparency => true,
-        :linewidth => 3,
-        :colormap => :RdYlGn, #to_colormap(:RdPu)
-        :scatter => Theme(
-            :transparency => true,
-            :marker => Circle,
-            :markersize => 0.03,
-            :strokecolor => :white,
-            :strokewidth => 0.01,
-            :glowcolor => RGBA(0, 0, 0, 0.4),
-            :glowwidth => 0.1,
-        )
-    )
+    @theme theme = begin
+        linewidth = to_float(3)
+        colormap = to_colormap(:RdYlGn)#to_colormap(:RdPu)
+        scatter = begin
+            marker = to_spritemarker(Circle)
+            markersize = to_float(0.03)
+            strokecolor = to_color(:white)
+            strokewidth = to_float(0.01)
+            glowcolor = to_color(RGBA(0, 0, 0, 0.4))
+            glowwidth = to_float(0.1)
+        end
+    end
     # update theme values
     scene[:theme] = theme
 end
 
+
 #cell
-img = loadasset("doge.png");
+img = loadasset("doge.png")
+scene = Scene(resolution = (500, 500))
+
 display(scene)
 show(scene)
 println(scene)
-scene = Scene(resolution = (500, 500))
 
 is = image(img)
-is = image(img, offset = Vec3f0(500, 0, 0))
-center!(scene, 0.0)
-subscene = Scene(scene, Signal(SimpleRectangle(0, 0, 200, 200)))
-scatter(subscene, rand(100) * 200, rand(100) * 200, markersize = 2mm)
 center!(scene)
-size(img)
+subscene = Scene(scene, Signal(SimpleRectangle(0, 0, 200, 200)))
+scatter(subscene, rand(100) * 200, rand(100) * 200, markersize = 4)
+center!(scene)
+
 #cell
 scene = Scene(resolution = (500, 500));
-
 x = [0, 1, 2, 0];
 y = [0, 0, 1, 2];
 z = [0, 2, 0, 1];
@@ -66,22 +64,17 @@ axis(r, r, r);
 center!(scene);
 
 #cell
-scene = Scene(rscene = Scene(resolution = (500, 500))
-vx = -1:0.1:1;
-vy = -1:0.1:1;
-scene[:theme, :scatter, :markersize] = 0.003
+scene = Scene(resolution = (500, 500))
+Makie.Makie.volume(rand(32, 32, 32), algorithm = :iso)
+center!(scene)
 
-f(x, y) = (sin(x*10) + cos(y*10)) / 4
-psurf = surface(vx, vy, f)
+#cell
+scene = Scene(resolution = (500, 500))
+heatmap(rand(32, 32))
+center!(scene)
 
-pos = lift_node(psurf[:x], psurf[:y], psurf[:z]) do x, y, z
-    vec(Point3f0.(x, y', z .+ 0.5))
-end
-
-pscat = scatter(pos, markersize = 0.1)
-
-plines = lines(view(pos, 1:2:length(pos)), color = (:blue, 0.4))
-center!(scene)esolution = (500, 500))
+#cell
+scene = Scene(resolution = (500, 500))
 r = linspace(-10, 10, 512)
 z = ((x, y)-> sin(x) + cos(y)).(r, r')
 Makie.contour(r, r, z, levels = 5, color = ColorBrewer.palette("RdYlBu", 5))
@@ -91,7 +84,6 @@ center!(scene)
 scene = Scene(resolution = (500, 500))
 vx = -1:0.1:1;
 vy = -1:0.1:1;
-scene[:theme, :scatter, :markersize] = 0.003
 
 f(x, y) = (sin(x*10) + cos(y*10)) / 4
 psurf = surface(vx, vy, f)
@@ -99,45 +91,35 @@ psurf = surface(vx, vy, f)
 pos = lift_node(psurf[:x], psurf[:y], psurf[:z]) do x, y, z
     vec(Point3f0.(x, y', z .+ 0.5))
 end
-
-pscat = scatter(pos, markersize = 0.1)
-
-plines = lines(view(pos, 1:2:length(pos)), color = (:blue, 0.4))
+pscat = scatter(pos)
+plines = lines(view(pos, 1:2:length(pos)))
 center!(scene)
-theme = Theme(
-    :markersize => 0.01,
-    :strokecolor => :white,
-    :strokewidth => 0.01,
-)
+@theme theme = begin
+    markersize = to_markersize2d(0.01)
+    strokecolor = to_color(:white)
+    strokewidth = to_float(0.01)
+end
 # this pushes all the values from theme to the plot
 push!(pscat, theme)
-pscat[:glow_color] = (:black, 0.1)
-
-# now apply a whole custom theme
+pscat[:glow_color] = to_node(RGBA(0, 0, 0, 0.4), x->to_color((), x))
+# apply it to the scene
 custom_theme(scene)
-
 # From now everything will be plotted with new theme
 psurf = surface(vx, 1:0.1:2, psurf[:z])
-psurf = scatter(map(x-> x .+ Point3f0(0, 1, 0), pscat[:positions]))
 center!(scene)
-
-# scene = Scene()
-# c = Circle(Point2f0(0), 0.1f0)
-# c2 = Circle(Point2f0(0), 0.12f0)
-# GeometryTypes.origin(c)
-# ms1 = meshscatter(rand(Point3f0, 100), color = :black, marker = c2)
-# meshscatter(ms1[:positions], marker = c)
 
 #cell
 scene = Scene(resolution = (500, 500))
-sv = scatter(rand(Point3f0, 100), markersize = 0.1)
+sv = scatter(rand(Point3f0, 100))
 similar(sv, rand(10), rand(10), rand(10), color = :black, markersize = 0.4)
+scene
+
 #cell
 scene = Scene(resolution = (500, 500))
 large_sphere = HyperSphere(Point3f0(0), 1f0)
 positions = decompose(Point3f0, large_sphere)
 colS = [Colors.RGBA{Float32}(rand(), rand(), rand(), 1.) for i = 1:length(positions)]
-sizesS = [rand(Vec3f0) .* 0.1f0 for i = 1:length(positions)]
+sizesS = [rand(Vec3f0) .* 0.5f0 for i = 1:length(positions)]
 meshscatter(positions, color = colS, markersize = sizesS)
 center!(scene)
 
@@ -219,14 +201,12 @@ hp = Makie.meshscatter(pG, color = colorsp, marker = meshS, markersize = radius)
 r = linspace(-1.3, 1.3, 4); Makie.axis(r, r, r)
 center!(scene)
 
-
 #cell
 scene = Scene(resolution = (500, 500))
 large_sphere = HyperSphere(Point3f0(0), 1f0)
 positions = decompose(Point3f0, large_sphere)
 linepos = view(positions, rand(1:length(positions), 1000))
-scene[:theme, :scatter, :markersize] = 0.1
-l = lines(linepos, linewidth = 1, color = (:black, 0.5), transparency = true)
+lines(linepos, linewidth = 0.1, color = :black)
 scatter(positions, strokewidth = 0.02, strokecolor = :white, color = RGBA(0.9, 0.2, 0.4, 0.6))
 r = linspace(-1.5, 1.5, 5)
 axis(r, r, r)
@@ -236,7 +216,7 @@ scene
 scene = Scene(resolution = (500, 500))
 large_sphere = HyperSphere(Point3f0(0), 1f0)
 positions = decompose(Point3f0, large_sphere)
-meshscatter(positions, color = RGBA(0.9, 0.2, 0.4, 1.0))
+meshscatter(positions, color = RGBA(0.9, 0.2, 0.4, 1))
 scene
 
 #cell
@@ -285,16 +265,6 @@ end
 linesegment(pos)
 scene
 
-#cell
-scene = Scene(resolution = (500, 500))
-x = GLNormalMesh(Sphere(Point3f0(0), 1f0))
-Makie.mesh(x.vertices, x.faces, color = :red)
-pos = map(x.vertices, x.normals) do p, n
-    p => p .+ (normalize(n) .* 0.05f0)
-end
-linesegment(pos, color = :blue)
-scene
-
 
 #cell
 scene = Scene(resolution = (500, 500))
@@ -318,10 +288,9 @@ scene
 
 #cell
 scene = Scene(resolution = (500, 500))
-cmesh = GLVisualize.loadasset("cat.obj")
-m = Makie.mesh(cmesh)
-wf  = wireframe(GLVisualize.loadasset("cat.obj"), color = (:white, 0.6))
+wireframe(GLVisualize.loadasset("cat.obj"))
 center!(scene)
+scene
 
 #cell
 scene = Scene(resolution = (500, 500))
@@ -338,8 +307,7 @@ center!(scene)
 scene = Scene(resolution = (500, 500), color = :black)
 stars = 100_000
 scatter((rand(Point3f0, stars) .- 0.5) .* 10,
-    glowwidth = 0.005, glow_color = :white,
-    color = RGBA(0.8, 0.9, 0.95, 0.4),
+    glowwidth = 0.005, glow_color = :white, color = RGBA(0.8, 0.9, 0.95, 0.4),
     markersize = rand(linspace(0.0001, 0.01, 100), stars)
 )
 scene
@@ -351,33 +319,23 @@ center!(scene)
 
 #cell
 scene = Scene(resolution = (500, 500))
-scatter(Point3f0[(1,0,0), (0,1,0), (0,0,1)], marker = [:x, :circle, :cross])
+scatter(Point3f0[(1,0,0), (0,1,0), (0,0,1)], marker=[:x, :circle, :cross])
 axis(scene, linspace(0, 1, 4), linspace(0, 1, 4), linspace(0, 1, 4))
 center!(scene);
 
 
 #cell
-using Makie, GeometryTypes
-scene = Scene(resolution = (800, 400))
-scatter(rand(100), rand(100), markersize = 2mm)
-ax = axis(linspace(-0.1, 5.1, 4), linspace(-0.1, 1.1, 4))
-center!(scene)
-GLAbstraction.empty_shader_cache!()
+using Makie
+scene = Scene(resolution = (500, 500))
+scatter(linspace(1, 5, 100), rand(100), markersize = 2mm)
+
 x = map([:dot, :dash, :dashdot], [2, 3, 4]) do ls, lw
-    linesegment(linspace(0, 5, 100), rand(100), linestyle = ls, linewidth = lw)
+    linesegment(linspace(1, 5, 100), rand(100), rand(100), linestyle = ls, linewidth = lw)
 end
-push!(x, scatter(linspace(-0.0, 5.0, 100), rand(100), markersize = 0.1))
+push!(x, scatter(linspace(1, 5, 100), rand(100), rand(100), markersize = 2mm))
 center!(scene)
-yield()
-center!(scene)
-
-for elem in x
-    elem[:scale] = to_value(to_value(scene, :canvas).camera, :scaling)
-end
-
-
 l = Makie.legend(x, ["attribute $i" for i in 1:4])
-l[:position] = (1rel, 1rel)
+l[:position] = (0, 1)
 l[:backgroundcolor] = RGBA(0.95, 0.95, 0.95)
 l[:strokecolor] = RGB(0.8, 0.8, 0.8)
 l[:gap] = 30
@@ -391,47 +349,10 @@ scene
 scene = Scene(resolution = (500, 500))
 cmap = collect(linspace(to_color(:red), to_color(:blue), 20))
 l = Makie.legend(cmap, 1:4)
-
-l[:position] = (1rel, 1rel)
+l[:position] = (1.0,1.0)
 l[:textcolor] = :blue
 l[:strokecolor] = :black
 l[:strokewidth] = 1
 l[:textsize] = 15
 l[:textgap] = 5
 scene
-
-
-#cell
-using Makie
-scene = Scene()
-points = Point[(1mm, 1mm), (10mm, 10mm), (20mm, 50mm), (2mm, 40mm), (69mm, 40mm)]
-lines(points)
-center!(scene)
-
-
-#cell
-using Makie, GeometryTypes
-nodes = Point3f0[(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)] # nodes
-
-tris = GLTriangle[(1, 2, 3), (1, 2, 4), (2, 3, 4), (1, 3, 4)] # tetrahedron
-
-colorvals = [0.1, 0.2, 1, 5]
-scene = Scene()
-
-interpolate(a, b, amount) = a .+ (b .* amount)
-
-function interpolated_getindex(x, map, from, to)
-    i01 = (x - from) ./ (to - from)
-    i = i01 * (length(map) - 1) .+ 1
-    bottom = floor(Int, i)
-    top = ceil(Int, i)
-    fract = top - i
-    interpolate(map[bottom], map[top], fract)
-end
-map = to_colormap(scene, :RdBu)
-colors = interpolated_getindex.(colorvals, (map,), 0.0, 5.0)
-m = mesh(
-    nodes, tris, color = colors, shading = false
-)
-w = wireframe(m[:mesh])
-meshscatter(nodes, color = colors, markersize = 0.1)

@@ -470,7 +470,10 @@ end
     to_markersize2d(scene, x)
 Anything that can be converted to `Vec2f0` for x, y scale
 """
-to_markersize2d(scene, x::Union{VecLike, Number}) = Vec2f0(to_absolute(scene, Vec(to_nfloats(Val{2}, x))))
+function to_markersize2d(scene, x::Union{VecLike, Number})
+    a = to_absolute(scene, Vec(to_nfloats(Val{2}, x)))
+    Vec2f0(a)
+end
 to_markersize2d(scene, x::AbstractArray) = to_markersize2d.(scene, x)
 
 

@@ -81,6 +81,18 @@ const atomic_funcs = (
 )
 
 
+
+function data_boundingbox(attributes::Scene)
+    if haskey(attributes, :positions)
+        data_boundingbox(to_value(attributes, :positions))
+    end
+end
+
+function data_boundingbox(x::AbstractArray{Point{N, T}}) where {N, T}
+    HyperRectangle{N, Float32}(x)
+end
+
+
 for (func, docstring) in atomic_funcs
     adoc = try
         f = eval(Symbol("$(func)_defaults"))

@@ -187,5 +187,8 @@ end
 function FRect(xy::StaticVector, wh::StaticVector)
     SimpleRectangle{Float32}(xy[1], xy[2], wh[1], wh[2])
 end
+function FRect(prim::GeometryPrimitive{2})
+    FRect(minimum(prim), widths(prim))
+end
 
 export ispressed, IRect, FRect, Keyboard, Mouse
