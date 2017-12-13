@@ -159,36 +159,4 @@ function ispressed(scene::Scene, button)
 end
 
 
-
-function IRect(x, y, w, h)
-    SimpleRectangle{Int}(round(Int, x), round(Int, y), round(Int, w), round(Int, h))
-end
-function IRect(xy::StaticVector, w, h)
-    IRect(xy[1], xy[2], w, h)
-end
-function IRect(x, y, wh::StaticVector)
-    IRect(x, y, wh[1], wh[2])
-end
-function IRect(xy::StaticVector, wh::StaticVector)
-    IRect(xy[1], xy[2], wh[1], wh[2])
-end
-function FRect(x, y, w, h)
-    SimpleRectangle{Float32}(x, y, w, h)
-end
-function FRect(r::SimpleRectangle)
-    SimpleRectangle{Float32}(r.x, r.y, r.w, r.h)
-end
-function FRect(xy::StaticVector, w, h)
-    SimpleRectangle{Float32}(xy[1], xy[2], w, h)
-end
-function FRect(x, y, wh::StaticVector)
-    SimpleRectangle{Float32}(x, y, wh[1], wh[2])
-end
-function FRect(xy::StaticVector, wh::StaticVector)
-    SimpleRectangle{Float32}(xy[1], xy[2], wh[1], wh[2])
-end
-function FRect(prim::GeometryPrimitive{2})
-    FRect(minimum(prim), widths(prim))
-end
-
 export ispressed, IRect, FRect, Keyboard, Mouse
