@@ -1,6 +1,7 @@
 const Pixel64 = Pixel{Float64}
 const Millimeter64 = Millimeter{Float64}
 import .Units: to_absolute
+using AbstractNumbers
 
 struct Canvas{N, C}
     pixel::HyperRectangle{2, Float64} # pixel on screen
@@ -12,6 +13,7 @@ struct Canvas{N, C}
     # any code that can actually work with a cone, this will just end up as a wrong cube anyways
     # right now it just takes the size of the middle point between far and near
     cam_area::HyperRectangle{N, Float64}
+    screen::Screen
     camera::C
 end
 
@@ -19,20 +21,18 @@ end
 to_mm(x) = convert(Millimeter, x)
 to_px(x::Unit{T}) where T = convert(Pixel{T}, x)
 
-function Canvas(scene)
-    screen = Makie.getscreen(scene)
+function Canvas(screen::Screen)
     pxarea = HyperRectangle{2, Float64}(screen.area.value)
-    px2mm = Float64(Makie.Units.pixel_per_mm(scene))
+    px2mm = Float64(Makie.Units.pixel_per_mm(screen))
     mmsize = widths(pxarea) .* px2mm
-    Canvas{2, Void}(pxarea, mmsize, pxarea, nothing)
+    Canvas{2, Void}(pxarea, mmsize, pxarea, screen, nothing)
 end
-function Canvas(scene, camera::T) where T
-    screen = Makie.getscreen(scene)
+function Canvas(screen::Screen, camera::T) where T
     pxarea = HyperRectangle{2, Float64}(screen.area.value)
-    px2mm = Float64(Makie.Units.pixel_per_mm(scene))
+    px2mm = Float64(Makie.Units.pixel_per_mm(screen))
     mmsize = widths(pxarea) .* px2mm
     camarea = HyperRectangle{2, Float64}(to_value(camera, :area))
-    Canvas{2, T}(pxarea, mmsize, camarea, camera)
+    Canvas{2, T}(pxarea, mmsize, camarea, screen, camera)
 end
 
 
@@ -77,10 +77,36 @@ function to_absolute(canvas::Canvas{2, <: AbstractCamera}, p::Point{2, PT}) wher
 end
 # If we don't have a camera, we can't convert, so we just return the number!
 to_absolute(scene::Canvas{N, Void}, x::Unit) where N = AbstractNumbers.number(x)
-using AbstractNumbers
 to_absolute(scene::Canvas{N, Void}, x::AbstractArray{<:Unit}) where N = AbstractNumbers.number.(x)
 to_absolute(scene::Canvas{N, Void}, x::Number) where N = x
 
 to_absolute(scene::Scene, x) = x
-to_absolute(scene::Scene, x::Units.Unit) = to_absolute(to_value(scene, :canvas), x)
-to_absolute(scene::Scene, x::AbstractArray{<:Units.Unit}) = to_absolute(to_value(scene, :canvas), x)
+
+function to_absolute(scene::Scene, x::Units.Unit{T}) where T
+    canvas = getcanvas(scene, false)
+    if canvas != nothing
+        return to_absolute(to_value(canvas), x)
+    else
+        ET.(x)
+    end
+end
+function to_absolute(scene::Scene, x::AbstractArray{T}) where T <: Unit{ET} where ET
+    canvas = getcanvas(scene, false)
+    if canvas != nothing
+        to_absolute(to_value(canvas), x)
+    else
+        ET.(x)
+    end
+end
+
+
+function Base.show(io::IO, canvas::Canvas)
+    println(io, "Canvas:")
+    for name in fieldnames(canvas)
+        if name == :screen
+            println("  screen: ", canvas.screen.name)
+        else
+            println(io, "  $name", getfield(canvas, name))
+        end
+    end
+end

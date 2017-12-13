@@ -46,7 +46,7 @@ Creates a child scene containing a new window!
 function Scene(parent::Scene{Backend}, area, name = :scene, data = Dict{Symbol, Any}(); screen_kw_args...) where Backend
     screen = getscreen(parent)
     newscreen = Screen(screen; area = to_signal(area), screen_kw_args...)
-    data[:screen] = newscreen
+    data[:canvas] = to_node(Makie.Canvas(newscreen), identity, Any)
     Scene{Backend}(name, parent, data, RefValue{Any}(nothing))
 end
 
@@ -93,26 +93,19 @@ and manually added via `show` by doing e.g.
     ```
 """
 function show!(scene::Scene{Backend}, childscene::Scene{Backend}) where Backend
-
     screen = getscreen(scene)
     viz = native_visual(childscene)
     viz == nothing && error("`childscene` does not contain any visual, so can't be added to `scene` with `show!`!")
-    canvas = get(childscene, :canvas) do
-        get(scene, :canvas) do
-            error("No canvas.")
-        end
+
+    canvas = to_value(getcanvas(childscene, false))
+    if canvas == nothing || canvas.camera == nothing
+        initial_bb = data_boundingbox(childscene)
+        canv = Makie.camera2d(scene, initial_bb)
+        scene[:canvas] = canv
+        canvas = scene[:canvas]
     end
-    lift_node(canvas) do canv
-        if canv.camera == nothing # first call
-            # bootstrapp camera
-            initial_bb = data_boundingbox(childscene)
-            canv = Makie.camera2d(scene, initial_bb)
-            push!(canvas, canv)
-            return nothing
-        end
-        addcam(childscene, canv.camera)
-        nothing
-    end
+    addcam(childscene, to_value(canvas).camera)
+
     push!.(screen, extract_renderable(viz))
     childscene
 end
@@ -155,11 +148,20 @@ end
 function rootscreen(scene::Scene)
     getscreen(rootscene(scene))
 end
-function getscreen(scene::Scene)
-    while !isnull(scene.parent) && !haskey(scene, :screen)
+function getcanvas(scene::Scene, err = true)
+    while !isnull(scene.parent) && !haskey(scene, :canvas)
         scene = parent(scene)
     end
-    get(scene, :screen, nothing)
+    !haskey(scene, :canvas) && err && throw("scene doesn't contain a canvas")
+    get(scene, :canvas, nothing)
+end
+
+function hascanvas(scene)
+    getcanvas(scene) != nothing
+end
+
+function getscreen(scene::Scene)
+    to_value(getcanvas(scene)).screen
 end
 
 include("signals.jl")
@@ -181,17 +183,22 @@ end
 const global_scene = Scene[]
 
 function GLAbstraction.center!(scene::Scene, border = 0.1)
-    screen = scene[:screen]
-    canvas = to_value(scene, :canvas)
+    canvas = to_value(getcanvas(scene))
+    screen = canvas.screen
     cam = canvas.camera
     proj = to_signal(cam[:projection])
-    robjs = filter(renderlist(screen)) do robj
-        robj[:projection] == proj
+    robjs = RenderObject[]
+    for v in values(scene.data)
+        isa(v, Scene) && native_visual(v) != nothing && v.name != :selection_rect || continue
+        append!(robjs, extract_renderable(native_visual(v)))
+    end
+    for elem in robjs
+        println(elem)
     end
     bb = GLAbstraction.renderlist_boundingbox(robjs)
 #    bb = AABB(minimum(bb) .- border, widths(bb) .+ 2border)
     reset!(canvas, bb, false)
-    scene[:canvas] = Makie.Canvas(scene, canvas.camera)
+    scene[:canvas] = Makie.Canvas(screen, canvas.camera)
     scene
 end
 
@@ -268,7 +275,7 @@ function Scene(;
         tsig = to_node(0.0)
         if !isempty(global_scene)
             oldscene = global_scene[]
-            oldscreen = oldscene[:screen]
+            oldscreen = getscreen(oldscene)
             nw = GLWindow.nativewindow(oldscreen)
             if position == nothing && isopen(nw)
                 position = GLFW.GetWindowPos(nw)
@@ -305,6 +312,7 @@ function Scene(;
         resize!(w, Int.(resolution)...)
 
         GLVisualize.add_screen(w)
+        # These are derived signals, which we can't close and are sort of internal!
         filtered = filter(w.inputs) do k, v
             !(k in (
                 :cursor_position,
@@ -315,11 +323,10 @@ function Scene(;
         dict = map(filtered) do k_v
             k_v[1] => to_node(k_v[2])
         end
-        dict[:screen] = w
         push!(dict[:window_open], true)
         dict[:time] = tsig
         scene = Scene(dict)
-        theme(scene) # apply theme
+        scene[:canvas] = to_node(Makie.Canvas(w), identity, Any)
         add_mousebuttons(scene)
         add_mousedrag(scene)
         scene[:keyboardbuttons] = lift_node(scene[:buttons_pressed]) do x
@@ -339,7 +346,6 @@ function Scene(;
         # functions can to the correct conversions to the correct units etc.
         # This solution is not perfect, since it will convert all attributes 2 times
         # so we should rethink this approach
-        scene[:canvas] = to_node(Makie.Canvas(scene), identity, Any)
         scene
     catch e
         if w != nothing
@@ -347,6 +353,7 @@ function Scene(;
         end
         rethrow(e)
     end
+    theme(scene) # apply theme
     scene
 end
 

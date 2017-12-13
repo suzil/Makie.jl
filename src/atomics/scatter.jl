@@ -48,40 +48,13 @@ function expand_for_glvisualize(kw_args)
     result
 end
 
-
-# function scatter()
-#     marker
-#     strokecolor
-#     strokewidth
-#     glowcolor
-#     glowwidth
-#     markersize
-#     rotations
-#     if haskey(scene, :positions)
-#         positions = to_positions(positions)
-#     elseif haskey(scene, :z)
-#         xyz = getindex.(scene, (:x, :y, :z))
-#         positions = to_positions(xyz)
-#     elseif haskey(scene, :y)
-#         xy = getindex.(scene, (:x, :y, :z))
-#         positions = to_positions(xy)
-#     end
-#     begin
-#         color = to_color(color)
-#     end
-#     begin
-#         colormap = to_colormap(colormap)
-#         intensity = to_intensity(intensity)
-#         colornorm = to_colornorm(colornorm, intensity)
-#     end
-# end
-#
 function _scatter(scene, attributes)
     attributes = scatter_defaults(scene, attributes)
     gl_data = expand_for_glvisualize(attributes)
     shape = to_typed_signal(attributes[:marker])
     main = (shape, to_typed_signal(attributes[:positions]))
-    attributes.visual[] = visualize(main, Style(:default), gl_data)
+    data = GLVisualize.sprites(main, Style(:default), gl_data)
+    attributes.visual[] = GLVisualize.assemble_shader(data).children[]
     insert_scene!(scene, attributes)
 end
 
@@ -98,7 +71,6 @@ function mesh2glvisualize(kw_args)
         if k == :positions
             k = :position
         end
-
         result[k] = to_typed_signal(v)
     end
     result[:fxaa] = true

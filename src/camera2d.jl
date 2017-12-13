@@ -4,21 +4,28 @@ using StaticArrays
 
 const AbstractCamera = Scene
 
-function camera2d(scene, area = scene[:window_area])
-    area_pres = ratio_preserving_rect(to_value(area), to_value(scene, :window_area))
+function camera2d(scene, area = nothing)
+    rootcanv = to_value(getcanvas(scene))
+    rootarea_s = rootcanv.screen.area
+    rootarea = Reactive.value(rootarea_s)
+    if area == nothing
+        area = rootarea
+    end
+    area_pres = ratio_preserving_rect(area, rootarea)
     cam = Scene(
+        scene, Dict(
         :area => lift_node(FRect, to_node(area_pres)),
         :projection => eye(Mat4f0),
         :view => eye(Mat4f0),
-        :resolution => lift_node(x->Vec2f0(widths(x)), scene[:window_area]),
+        :resolution => lift_node(x->Vec2f0(widths(x)), to_node(rootarea)),
         :scaling => Vec2f0(1)
-    )
+    ))
     cam[:projectionview] = lift_node(*, cam, :projection, :view)
     # Initialize projection from the area
     Makie.update_cam!(cam, to_value(cam, :area))
     add_zoom(cam, scene)
     add_pan(cam, scene)
-    canvas = Canvas(scene, cam)
+    canvas = Canvas(rootcanv.screen, cam)
     selection_rect(scene, canvas)
     canvas
 end
@@ -45,7 +52,7 @@ function update_cam!(cam::AbstractCamera, area)
 end
 
 function add_mousebuttons(scene::Scene)
-    nw = GLWindow.nativewindow(scene[:screen])
+    nw = GLWindow.nativewindow(getscreen(scene))
     scene[:mousebuttons] = Set(Mouse.Button[])
     GLFW.SetMouseButtonCallback(nw, (native_window, button, action, mods) -> begin
         set = to_value(scene, :mousebuttons)
@@ -81,6 +88,7 @@ function selection_rect(
     lw = 2f0
     rect_vis = lines(
         scene,
+        name = :selection_rect,
         rect[],
         linestyle = :dot,
         thickness = 2f0,
@@ -91,11 +99,12 @@ function selection_rect(
     )
     cam = canvas.camera
     waspressed = RefValue(false)
-    dragged_rect = lift_node(scene, :mousedrag) do drag
-        if ispressed(scene, key) && ispressed(scene, button)
-            screen_area = to_value(scene, :window_area)
+    root = rootscene(scene)
+    dragged_rect = lift_node(root, :mousedrag) do drag
+        if ispressed(root, key) && ispressed(root, button)
+            screen_area = to_value(root, :window_area)
             cam_area = to_value(cam, :area)
-            mp = to_value(scene, :mouseposition)
+            mp = to_value(root, :mouseposition)
             mp = camspace(cam_area, screen_area, mp)
 
             if drag == Mouse.down
@@ -152,14 +161,15 @@ function add_mousedrag(scene::Scene)
 end
 
 function add_pan(cam::AbstractCamera, scene)
+    root = rootscene(scene)
     startpos = RefValue(Vec(0.0, 0.0))
-    lift_node(scene, :mouseposition, :mousedrag) do mp, dragging
-        if ispressed(scene, Mouse.middle)
-            screen_area = to_value(scene, :window_area)
+    lift_node(root, :mouseposition, :mousedrag) do mp, dragging
+        if ispressed(root, Mouse.middle)
+            screen_area = to_value(root, :window_area)
             cam_area = to_value(cam, :area)
             if dragging == Mouse.down
                 startpos[] = mp
-            elseif dragging == Mouse.pressed && ispressed(scene, Mouse.middle)
+            elseif dragging == Mouse.pressed && ispressed(root, Mouse.middle)
                 diff = startpos[] .- mp
                 startpos[] = mp
                 diff = diff .* wscale(screen_area, cam_area)
@@ -171,13 +181,14 @@ function add_pan(cam::AbstractCamera, scene)
 end
 
 function add_zoom(cam::AbstractCamera, scene)
-    lift_node(scene[:scroll]) do x
+    root = rootscene(scene)
+    lift_node(root[:scroll]) do x
         zoom = Float32(x[2])
         if zoom != 0
             a = to_value(cam, :area)
             z = 1 + (zoom * 0.10)
-            mp = Vec2f0(to_value(scene, :mouseposition))
-            mp = (mp .* wscale(to_value(scene, :window_area), a)) + minimum(a)
+            mp = Vec2f0(to_value(root, :mouseposition))
+            mp = (mp .* wscale(to_value(root, :window_area), a)) + minimum(a)
             p1, p2 = minimum(a), maximum(a)
             p1, p2 = p1 - mp, p2 - mp # translate to mouse position
             p1, p2 = z * p1, z * p2
@@ -189,21 +200,23 @@ function add_zoom(cam::AbstractCamera, scene)
     end
 end
 
-function ratio_preserving_rect(current, target)
-    w1 = widths(current)
-    w2 = widths(target)
+function ratio_preserving_widths(w1, w2)
     w2norm = normalize(w2)
-    wsame = w2norm .* maximum(w1)
-    FRect(minimum(current), wsame)
+    w2norm = inv(maximum(w2norm)) * w2norm
+    w2norm .* maximum(w1), w2norm
 end
 
+function ratio_preserving_rect(current::GeometryPrimitive, target::GeometryPrimitive)
+    w1 = widths(current)
+    w2 = widths(target)
+    wr, w2norm = ratio_preserving_widths(w1, w2)
+    FRect(minimum(current), wr)
+end
 function reset!(canvas, boundingbox, preserveratio = true)
     cam = canvas.camera
-    w, h = widths(boundingbox)
-    w1 = Vec2f0(w, h)
+    w1 = widths(boundingbox)
     w2 = widths(canvas.pixel)
-    w2norm = normalize(w2)
-    wsame = w2norm .* maximum(w1)
+    wsame, w2norm = ratio_preserving_widths(w1, w2)
     if !preserveratio
         s = if w1[1] < w1[2]
             Vec2f0(wsame[1] / w1[1] / w2norm[1], 1)

@@ -47,7 +47,7 @@ function linked(scene::Scene, attributes::Scene, convert_func, keys)
         end
     end
 
-    return attributes.data[attribute] = lift_node(scene[:canvas], node; convert = ConvertFun(convert_func, scene)) do canvas, value
+    return attributes.data[attribute] = lift_node(getcanvas(scene), node; convert = ConvertFun(convert_func, scene)) do canvas, value
         convert_func(scene, value)
     end
 end
@@ -81,7 +81,7 @@ function default(
             possibly in the documentation of [`$(first(keys))`](@ref).
         ")
     end
-    return attributes.data[attribute] = lift_node(scene[:canvas], node; convert = ConvertFun(convert_func, scene)) do canvas, value
+    return attributes.data[attribute] = lift_node(getcanvas(scene), node; convert = ConvertFun(convert_func, scene)) do canvas, value
         convert_func(scene, value)
     end
 end
@@ -124,7 +124,7 @@ function default(
             end
         end
     end
-    return attributes.data[attribute] = lift_node(scene[:canvas], node; convert = ConvertFun(convert_func, scene)) do canvas, value
+    return attributes.data[attribute] = lift_node(getcanvas(scene), node; convert = ConvertFun(convert_func, scene)) do canvas, value
         convert_func(scene, value)
     end
 end
@@ -149,12 +149,12 @@ function calculated(scene::Scene, attributes::Scene, keys::NTuple{N, Symbol}, co
     # Attribute overwritten by user, no need to calculate it!
     attribute = last(keys)
     node = if haskey(attributes, attribute)
-        lift_node(scene[:canvas], attributes[attribute]; convert = ConvertFun(convert_func, scene)) do canvas, val
+        lift_node(getcanvas(scene), attributes[attribute]; convert = ConvertFun(convert_func, scene)) do canvas, val
             convert_func(scene, val)
         end
     else
         # we need to calculate it from args - by conention, first arg is always the scene
-        lift_node(scene[:canvas], args...; convert = ConvertFun(convert_func, scene)) do canvas, args...
+        lift_node(getcanvas(scene), args...; convert = ConvertFun(convert_func, scene)) do canvas, args...
             convert_func(scene, args...)
         end
     end

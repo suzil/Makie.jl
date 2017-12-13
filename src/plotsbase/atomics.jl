@@ -1,6 +1,8 @@
 function expand_kwargs(scene, kw_args, name = :scene)
     # TODO get in all the shorthands from Plots.jl
-    attributes = Scene(name, Nullable(scene), Dict{Symbol, Any}(kw_args), RefValue{Any}(nothing))
+    attribs = Dict{Symbol, Any}(kw_args)
+    name = get(attribs, :name, name)
+    attributes = Scene(name, Nullable(scene), attribs, RefValue{Any}(nothing))
     shared_defaults(scene, attributes)
 end
 

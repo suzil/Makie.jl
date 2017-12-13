@@ -135,13 +135,12 @@ function alignment2num(x::Symbol)
 end
 
 
-function to_gl_text(string, startpos::VecLike{N, T}, textsize, font, align, rot) where {N, T}
+function to_gl_text(string, startpos::VecLike{N, T}, textsize, font, aoffsetvec, rot) where {N, T}
     atlas = GLVisualize.get_texture_atlas()
     pos = Point{N, Float32}(startpos)
     rscale = Float32(textsize)
     positions2d = GLVisualize.calc_position(string, Point2f0(0), rscale, font, atlas)
     toffset = GLVisualize.calc_offset(string, rscale, font, atlas)
-    aoffsetvec = Vec2f0(alignment2num.(align))
     aoffset = align_offset(rot, Point2f0(0), positions2d[end], atlas, rscale, font, aoffsetvec)
     aoffsetn = Point{N, Float32}(to_nd(aoffset, Val{N}, 0f0))
     uv_offset_width = Vec4f0[GLVisualize.glyph_uv_width!(atlas, c, font) for c = string]

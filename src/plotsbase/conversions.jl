@@ -403,21 +403,15 @@ function to_spritemarker(scene, marker::Symbol)
 end
 
 
-to_spritemarker(scene, marker::String) = marker
-to_spritemarker(scene, marker::AbstractVector{Char}) = String(marker)
+to_spritemarker(scene, marker::AbstractVector{Char}) = marker
 
 """
 Vector of anything that is accepted as a single marker will give each point it's own marker.
 Note that it needs to be a uniform vector with the same element type!
 """
 function to_spritemarker(scene, marker::AbstractVector)
-    marker = map(marker) do sym
+    map(marker) do sym
         to_spritemarker(scene, sym)
-    end
-    if isa(marker, AbstractVector{Char})
-        String(marker)
-    else
-        marker
     end
 end
 

@@ -101,7 +101,7 @@ function legend(scene::Scene, legends::AbstractVector{<:Scene}, labels::Abstract
     )
     # Nasty, but Scene doesn't accept signals... Guess at some point we will just fold
     # GLWindow into makie anyways (or the gl backend package)
-    lscreen = legend_scene[:screen]
+    lscreen = getscreen(legend_scene)
     lift_node(x-> (lscreen.color = x), color)
     lift_node((x...)-> (lscreen.stroke = x), stroke, strokecolor)
     show!.(legend_scene, legend)
@@ -132,7 +132,7 @@ function legend(scene::Scene, colormap::AbstractVector{<: Colorant}, range, attr
         reshape(cmap, (length(cmap), 1))
     end
     tio = TextBuffer(Point2f0(0))
-    area = to_node(scene[:screen].area)
+    area = to_node(getscreen(scene).area)
     rect = lift_node(
                 to_node(range), textsize, textcolor, align,
                 textgap, width, padding, opad, position, area

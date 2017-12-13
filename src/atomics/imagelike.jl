@@ -39,6 +39,7 @@ function image2glvisualize(attributes)
     end)
     result[:spatialorder] = to_value(attributes[:spatialorder])
     result[:model] = to_typed_signal(attributes[:model])
+    result[:fxaa] = false
     result
 end
 

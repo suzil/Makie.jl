@@ -33,19 +33,6 @@ function custom_theme(scene)
 end
 
 
-#cell
-img = loadasset("doge.png")
-scene = Scene(resolution = (500, 500))
-
-display(scene)
-show(scene)
-println(scene)
-
-is = image(img)
-center!(scene)
-subscene = Scene(scene, Signal(SimpleRectangle(0, 0, 200, 200)))
-scatter(subscene, rand(100) * 200, rand(100) * 200, markersize = 4)
-center!(scene)
 
 #cell
 scene = Scene(resolution = (500, 500));
@@ -68,10 +55,6 @@ scene = Scene(resolution = (500, 500))
 Makie.Makie.volume(rand(32, 32, 32), algorithm = :iso)
 center!(scene)
 
-#cell
-scene = Scene(resolution = (500, 500))
-heatmap(rand(32, 32))
-center!(scene)
 
 #cell
 scene = Scene(resolution = (500, 500))
@@ -244,7 +227,6 @@ scene
 
 #cell
 scene = Scene(resolution = (500, 500))
-
 N = 40
 r = linspace(-2, 2, 40)
 surf_func(i) = [Float32(xy_data(x*i, y*i)) for x = r, y = r]
@@ -299,11 +281,6 @@ center!(scene)
 scene
 
 #cell
-scene = Scene(resolution = (500, 500))
-heatmap(rand(32, 32))
-center!(scene)
-
-#cell
 scene = Scene(resolution = (500, 500), color = :black)
 stars = 100_000
 scatter((rand(Point3f0, stars) .- 0.5) .* 10,
@@ -312,22 +289,9 @@ scatter((rand(Point3f0, stars) .- 0.5) .* 10,
 )
 scene
 
-#cell
-scene = Scene(resolution = (500, 500))
-Makie.volume(rand(32, 32, 32), algorithm = :iso)
-center!(scene)
-
-#cell
-scene = Scene(resolution = (500, 500))
-scatter(Point3f0[(1,0,0), (0,1,0), (0,0,1)], marker=[:x, :circle, :cross])
-axis(scene, linspace(0, 1, 4), linspace(0, 1, 4), linspace(0, 1, 4))
-center!(scene);
 
 
-#cell
-using Makie
-scene = Scene(resolution = (500, 500))
-scatter(linspace(1, 5, 100), rand(100), markersize = 2mm)
+
 
 x = map([:dot, :dash, :dashdot], [2, 3, 4]) do ls, lw
     linesegment(linspace(1, 5, 100), rand(100), rand(100), linestyle = ls, linewidth = lw)
