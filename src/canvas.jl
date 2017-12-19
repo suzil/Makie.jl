@@ -76,37 +76,22 @@ function to_absolute(canvas::Canvas{2, <: AbstractCamera}, p::Point{2, PT}) wher
     Point(ppx .+ ppxl)
 end
 # If we don't have a camera, we can't convert, so we just return the number!
-to_absolute(scene::Canvas{N, Void}, x::Unit) where N = AbstractNumbers.number(x)
-to_absolute(scene::Canvas{N, Void}, x::AbstractArray{<:Unit}) where N = AbstractNumbers.number.(x)
-to_absolute(scene::Canvas{N, Void}, x::Number) where N = x
+to_absolute(scene::Void, x::Unit) = AbstractNumbers.number(x)
+to_absolute(scene::Void, x::AbstractArray{<:Unit}) = AbstractNumbers.number.(x)
+to_absolute(scene::Void, x::Number) = x
 
-to_absolute(scene::Scene, x) = x
-
-function to_absolute(scene::Scene, x::Units.Unit{T}) where T
-    canvas = getcanvas(scene, false)
-    if canvas != nothing
-        return to_absolute(to_value(canvas), x)
-    else
-        ET.(x)
-    end
+function to_absolute(scene::Scene, x)
+    canv = to_value(getcanvas(scene, false))
+    return to_absolute(canv, x)
 end
-function to_absolute(scene::Scene, x::AbstractArray{T}) where T <: Unit{ET} where ET
-    canvas = getcanvas(scene, false)
-    if canvas != nothing
-        to_absolute(to_value(canvas), x)
-    else
-        ET.(x)
-    end
-end
-
 
 function Base.show(io::IO, canvas::Canvas)
     println(io, "Canvas:")
     for name in fieldnames(canvas)
         if name == :screen
-            println("  screen: ", canvas.screen.name)
+            println(io, "  screen: ", canvas.screen.name)
         else
-            println(io, "  $name", getfield(canvas, name))
+            println(io, "  $name: ", getfield(canvas, name))
         end
     end
 end

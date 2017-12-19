@@ -28,29 +28,27 @@ end
 # end
 
 function legend_shared(scene, kw_args)
-    mm = 10
     @defaults kw_args -> scene.legendshared = begin
         backgroundcolor = to_color(:white)
         strokecolor = to_color(RGBA(0.3, 0.3, 0.3, 0.9))
-        strokewidth = to_float(1mm)
+        strokewidth = to_float(1)
         textgap = to_float(1.5mm)
         padding = to_2floats(1mm)
         outerpadding = to_2floats(1mm)
         align = to_textalign((:left, :hcenter))
         rotation = to_rotation(Vec4f0(0, 0, 0, 1))
         textcolor = to_color(:black)
-        textsize = to_float(1.6mm)
+        textsize = to_float(6mm)
     end
     kw_args
 end
 
 function legend_defaults(scene, kw_args)
-    mm = 10
     @defaults kw_args -> scene.legend = begin
         position = to_position((0rel, 1rel))
-        labelwidth = to_float(2mm)
+        labelwidth = to_float(4mm)
         gap = to_float(2mm)
-        markersize = to_markersize2d(0.5mm)
+        markersize = to_markersize2d(2mm)
         linepattern = to_positions(Point2f0[(0, 0), (1, 0.0)])
         scatterpattern = to_positions(Point2f0[(0.5, 0.0)])
 
@@ -207,7 +205,7 @@ function scatter_defaults(scene, kw_args)
         glowcolor = to_color((:black, 0.0))
         glowwidth = to_float(0)
 
-        markersize = to_markersize2d(0.1rel)
+        markersize = to_markersize2d(3mm)
 
         rotations = to_rotations(Billboard())
     end
@@ -219,7 +217,7 @@ function meshscatter_defaults(scene, kw_args)
     color_or_colormap(scene, kw_args, :meshscatter)
     @defaults kw_args -> scene.meshscatter = begin
         marker = to_mesh(Sphere(Point3f0(0), 1f0))
-        markersize = to_markersize3d(0.1rel)
+        markersize = to_markersize3d(4mm)
         rotations = to_rotations(Vec4f0(0, 0, 0, 1))
     end
     kw_args

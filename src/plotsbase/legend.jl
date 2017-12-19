@@ -34,14 +34,12 @@ function make_label(p, plot, labeltext, i, attributes)
     return if plot.name in (:lines, :linesegment)
         linesegment(
             p, scale.(lpattern, w, padding, gap, tsize),
-            color = plot[:color], linestyle = plot[:linestyle], show = false,
-            camera = :pixel
+            color = plot[:color], linestyle = plot[:linestyle], show = false
         )
     else
         scatter(
             p, scale.(mpattern, w, padding, gap, tsize),
-            markersize = msize, color = get(plot, :color, :black), show = false,
-            camera = :pixel
+            markersize = msize, color = get(plot, :color, :black), show = false
         )
     end
 end
@@ -51,9 +49,9 @@ end
 function legend(scene::Scene, legends::AbstractVector{<:Scene}, labels::AbstractVector{<:String}, attributes)
     isempty(legends) && return
     N = length(legends)
-
-    attributes = legend_defaults(scene, attributes)
-
+    canvas = pixelcam(scene)
+    sub = Scene(scene, :markers, canvas = canvas)
+    attributes = legend_defaults(sub, attributes)
     position, color, stroke, strokecolor, padding, opad = getindex.(attributes, (
         :position, :backgroundcolor, :strokewidth, :strokecolor, :padding,
         :outerpadding
@@ -66,14 +64,14 @@ function legend(scene::Scene, legends::AbstractVector{<:Scene}, labels::Abstract
         :textsize, :textcolor, :rotation, :align
     ))
 
-    legend = make_label.(scene, legends, labels, 1:N, attributes)
+    legend = make_label.(sub, legends, labels, 1:N, attributes)
 
     lift_node(to_node(labels), args...) do labels, w, gap, tgap, padding, font...
         empty!(textbuffer)
         for i = 1:length(labels)
             yposition = (i - 1) * gap
             tsize = floor(font[1] / 2) # textsize at position one, half of it since we used centered align
-            xy = Point2f0(w + padding + tgap, yposition + tsize + padding)
+            xy = Point2f0(w + tgap, yposition + tsize) .+ Point2f0(padding)
             append!(textbuffer, xy, labels[i], font...)
         end
         return
@@ -81,7 +79,6 @@ function legend(scene::Scene, legends::AbstractVector{<:Scene}, labels::Abstract
 
     bblist = (native_visual.(legend)..., textbuffer.robj)
     screen = getscreen(scene)
-
     legendarea = lift_node(position, to_node(screen.area), opad, args[4:5]..., args[1:3]...) do xy, area, opad, padding, unused...
         bb = mapreduce(x-> value(x.boundingbox), union, bblist)
         mini = minimum(bb)
@@ -91,11 +88,12 @@ function legend(scene::Scene, legends::AbstractVector{<:Scene}, labels::Abstract
         else
             (0, 0)
         end
-        # TODO check for overlaps, eliminate them!!
-        dont_touch(area, IRect(xy[1], xy[2], w, h), Vec2f0(opad))
+        IRect(dont_touch(FRect(area), FRect(xy[1], xy[2], w, h), Vec2f0(opad)))
     end
+
     legend_scene = Scene(
-        scene, legendarea,
+        scene, legendarea, :legend,
+        canvas = canvas,
         color = to_value(color),
         stroke = (to_value(stroke), to_value(strokecolor))
     )
@@ -106,6 +104,7 @@ function legend(scene::Scene, legends::AbstractVector{<:Scene}, labels::Abstract
     lift_node((x...)-> (lscreen.stroke = x), stroke, strokecolor)
     show!.(legend_scene, legend)
     GLVisualize._view(textbuffer.robj, lscreen, camera = :fixed_pixel)
+    attributes[:screen] = legend_scene
     attributes
 end
 

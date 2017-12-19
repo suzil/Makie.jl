@@ -134,30 +134,64 @@ function plot(scene::S, A::AbstractMatrix{T}) where {T <: AbstractFloat, S <: Sc
         map(i-> "y $i", 1:M)
     end
 
-    lift_node(to_node(A), to_node(Makie.getscreen(scene).area)) do a, area
-        xlims = (1, size(A, 1))
-        ylims = extrema(A)
-        stretch = Makie.to_nd(fit_ratio(area, (xlims, ylims)), Val{3}, 1)
-        sub[:scale] = stretch
-    end
-    l = legend(scene, plots, labels)
+    # lift_node(to_node(A), to_node(Makie.getscreen(scene).area)) do a, area
+    #     xlims = (1, size(A, 1))
+    #     ylims = extrema(A)
+    #     # stretch = Makie.to_nd(fit_ratio(area, (xlims, ylims)), Val{3}, 1)
+    #     # sub[:scale] = stretch
+    # end
+    l = legend(sub, plots, labels)
     # Only create one axis per scene
     xlims = linspace(1, size(A, 1), min(N, 10))
     ylims = linspace(extrema(A)..., 5)
-    a = get(scene, :axis) do
+    a = get(sub, :axis) do
         xlims = (1, size(A, 1))
         ylims = extrema(A)
-        area = Reactive.value(Makie.getscreen(scene).area)
-        stretch = Makie.to_nd(fit_ratio(area, (xlims, ylims)), Val{3}, 1)
-        axis(linspace((xlims .* stretch[1])..., 4), linspace((ylims .* stretch[2])..., 4))
+        area = Reactive.value(Makie.getscreen(sub).area)
+        # stretch = Makie.to_nd(fit_ratio(area, (xlims, ylims)), Val{3}, 1)
+        axis(sub, linspace((xlims #=.* stretch[1]=#)..., 4), linspace((ylims #=.* stretch[2]=#)..., 4))
     end
-    center!(scene)
+    center!(sub)
 end
 
 using Makie, GeometryTypes
-
 scene = Scene()
 
+sub = Scene(scene, :sub, canvas = Makie.pixelcam(scene))
+
+using Makie, GeometryTypes
+scene = Scene()
+
+A = rand(10, 7)
+N, M = size(A)
+sub = Scene(scene, scale = Vec3f0(1))
+attributes = Dict{Symbol, Any}()
+plots = map(1:M) do i
+    lines(sub, 1:N, A[:, i])
+end
+labels = get(attributes, :labels) do
+    map(i-> "y $i", 1:M)
+end
+l = legend(scene, plots, labels)
+l[:screen, :canvas] = Makie.pixelcam(scene)
+l[:screen, :canvas]
+
+l[:screen, :canvas]
+sub[:canvas]
+GLVisualize.current_screen()
+sub = plot(scene, rand(10, 7))
+center!(scene)
+
+s = scatter(scene, Point2f0[(0, 0), (1, 1), (1, 0), (0, 1)], markersize = 10mm)
+center!(scene)
+
+scene = Scene()
+sub = Scene(scene, :lol)
+s = scatter(sub, Point2f0[(0, 0), (1, 1), (1, 0), (0, 1)])
+s = scatter(sub, rand(1000), rand(1000))
+center!(sub)
+s[:markersize] = 2mm
+1.0 ./ 1.6
 x = (0.5rel, 0.5rel)
 
 x .* Point2f0(0.5, 0.5)
@@ -172,7 +206,6 @@ convert(Relative{Float64}, 1)
 
 convert(NTuple{2, Relative{Float64}}, Tuple(Relative.(widths(scene))))
 
-plot(scene, rand(11, 2))
 
 using VisualRegressionTests
 
@@ -340,3 +373,19 @@ shp = open(file) do fd
     read(fd, Shapefile.Handle)
 end
 shp.shapes[1].points)
+
+scene = Scene()
+x = plot(scene = defaultscene(), args...)
+
+plot(x, args...)
+
+subscene = Scene(scene)
+plot(subscene, args...)
+
+limits
+
+
+subscene = Scene(scene, rotation = ...)
+plot(subscene, rotation = ..., args...)
+
+plot(subscene, padding, alignment)

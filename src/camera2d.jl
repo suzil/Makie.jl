@@ -4,8 +4,32 @@ using StaticArrays
 
 const AbstractCamera = Scene
 
+
+function pixelcam(scene::Scene)
+    screen = getscreen(scene)
+    areanode = to_node(screen.area, FRect)
+    cam = Scene(
+        scene, Dict(
+        :area => areanode,
+        :projection => eye(Mat4f0),
+        :view => eye(Mat4f0),
+        :resolution => lift_node(x->Vec2f0(widths(x)), areanode),
+        :scaling => Vec2f0(1)
+    ))
+    cam[:projectionview] = lift_node(*, cam, :projection, :view)
+    # Initialize projection from the area
+    update_cam!(cam, to_value(areanode))
+    lift_node(areanode) do area
+        x, y = minimum(area)
+        w, h = widths(area) ./ 2f0
+        cam[:projection] = orthographicprojection(-w, w, -h, h, -10_000f0, 10_000f0)
+        cam[:view] = translationmatrix(Vec3f0(-x - w, -y - h, 0))
+    end
+    Canvas(screen, cam)
+end
+
 function camera2d(scene, area = nothing)
-    rootcanv = to_value(getcanvas(scene))
+    rootcanv = to_value(getcanvas(scene, false))
     rootarea_s = rootcanv.screen.area
     rootarea = Reactive.value(rootarea_s)
     if area == nothing
@@ -202,7 +226,7 @@ end
 
 function ratio_preserving_widths(w1, w2)
     w2norm = normalize(w2)
-    w2norm = inv(maximum(w2norm)) * w2norm
+    w2norm = reverse(maximum(w2norm) ./ w2norm)
     w2norm .* maximum(w1), w2norm
 end
 

@@ -155,6 +155,9 @@ immutable Billboard end
 """
 2D Integer Rectangle
 """
+function IRect(rect::SimpleRectangle)
+    IRect(rect.x, rect.y, rect.w, rect.h)
+end
 function IRect(x, y, w, h)
     SimpleRectangle{Int}(round(Int, x), round(Int, y), round(Int, w), round(Int, h))
 end
@@ -167,15 +170,17 @@ end
 function IRect(xy::StaticVector, wh::StaticVector)
     IRect(xy[1], xy[2], wh[1], wh[2])
 end
+
 """
 2D Floatingpoint Rectangle
 """
-function FRect(x, y, w, h)
-    SimpleRectangle{Float32}(x, y, w, h)
-end
 function FRect(r::SimpleRectangle)
     SimpleRectangle{Float32}(r.x, r.y, r.w, r.h)
 end
+function FRect(x, y, w, h)
+    SimpleRectangle{Float32}(x, y, w, h)
+end
+
 function FRect(xy::StaticVector, w, h)
     SimpleRectangle{Float32}(xy[1], xy[2], w, h)
 end

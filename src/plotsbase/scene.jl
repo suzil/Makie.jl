@@ -43,10 +43,13 @@ end
 """
 Creates a child scene containing a new window!
 """
-function Scene(parent::Scene{Backend}, area, name = :scene, data = Dict{Symbol, Any}(); screen_kw_args...) where Backend
+function Scene(parent::Scene{Backend}, area, name = :scene, data = Dict{Symbol, Any}(); canvas = nothing,screen_kw_args...) where Backend
     screen = getscreen(parent)
     newscreen = Screen(screen; area = to_signal(area), screen_kw_args...)
-    data[:canvas] = to_node(Makie.Canvas(newscreen), identity, Any)
+    if canvas == nothing
+        canvas = Canvas(newscreen)
+    end
+    data[:canvas] = to_node(canvas, identity, Any)
     Scene{Backend}(name, parent, data, RefValue{Any}(nothing))
 end
 
@@ -61,7 +64,8 @@ function Scene(parent::Scene{Backend}, scene::Dict, name = :scene) where Backend
     end
     Scene{Backend}(name, Nullable(parent), data, RefValue{Any}(nothing))
 end
-function Scene(parent::Scene{Backend}, name::Symbol = :scene; attributes...) where Backend
+function Scene(parent::Scene{Backend}, name::Symbol = :scene; canvas = getcanvas(parent), attributes...) where Backend
+    push!(attributes, (:canvas, canvas))
     Scene(parent, Dict{Symbol, Any}(attributes), name)
 end
 
@@ -96,16 +100,18 @@ function show!(scene::Scene{Backend}, childscene::Scene{Backend}) where Backend
     screen = getscreen(scene)
     viz = native_visual(childscene)
     viz == nothing && error("`childscene` does not contain any visual, so can't be added to `scene` with `show!`!")
-
-    canvas = to_value(getcanvas(childscene, false))
+    canvas = nothing
+    if haskey(childscene, :canvas)
+        canvas = to_value(childscene[:canvas])
+    elseif haskey(scene, :canvas)
+        canvas = to_value(scene[:canvas])
+    end
     if canvas == nothing || canvas.camera == nothing
         initial_bb = data_boundingbox(childscene)
-        canv = Makie.camera2d(scene, initial_bb)
-        scene[:canvas] = canv
-        canvas = scene[:canvas]
+        canvas = camera2d(scene, initial_bb)
+        scene[:canvas] = canvas
     end
     addcam(childscene, to_value(canvas).camera)
-
     push!.(screen, extract_renderable(viz))
     childscene
 end
@@ -152,7 +158,6 @@ function getcanvas(scene::Scene, err = true)
     while !isnull(scene.parent) && !haskey(scene, :canvas)
         scene = parent(scene)
     end
-    !haskey(scene, :canvas) && err && throw("scene doesn't contain a canvas")
     get(scene, :canvas, nothing)
 end
 
@@ -191,9 +196,6 @@ function GLAbstraction.center!(scene::Scene, border = 0.1)
     for v in values(scene.data)
         isa(v, Scene) && native_visual(v) != nothing && v.name != :selection_rect || continue
         append!(robjs, extract_renderable(native_visual(v)))
-    end
-    for elem in robjs
-        println(elem)
     end
     bb = GLAbstraction.renderlist_boundingbox(robjs)
 #    bb = AABB(minimum(bb) .- border, widths(bb) .+ 2border)
@@ -326,7 +328,7 @@ function Scene(;
         push!(dict[:window_open], true)
         dict[:time] = tsig
         scene = Scene(dict)
-        scene[:canvas] = to_node(Makie.Canvas(w), identity, Any)
+        scene[:canvas] = to_node(Canvas(w), identity, Any)
         add_mousebuttons(scene)
         add_mousedrag(scene)
         scene[:keyboardbuttons] = lift_node(scene[:buttons_pressed]) do x
