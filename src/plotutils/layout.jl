@@ -67,6 +67,18 @@ end
 
 
 
+struct Transform
+    padding
+    alignment
+    scale
+    position
+    rotation
+end
+
+function layout(x::Transform, self::BoundingBox{N}, parent::BoundingBox{N})::Mat4f0 where N
+
+
+end
 
 
 # using GeometryTypes

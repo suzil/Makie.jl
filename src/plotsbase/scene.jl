@@ -14,113 +14,62 @@ struct Node{T, F}
     convert::F
 end
 
+abstract type AbstractScene end
+
 """
 A scene is a holder of attributes which are all of the type Node.
 A scene can contain attributes, which are themselves scenes.
 Nodes can be connected, since they're signals under the hood, which can be created from other nodes.
 """
-struct Scene{Backend}
+struct Scene <: AbstractScene
     name::Symbol
     parent::Nullable{Scene}
     data::Dict{Symbol, Any}
+    children::Vector{Scene}
+
+    canvas
+    transformation
+
     visual::RefValue{Any}
 end
 
-Base.start(x::Scene) = start(x.data)
-Base.next(x::Scene, idx) = next(x.data, idx)
-Base.done(x::Scene, idx) = done(x.data, idx)
+Base.start(x::Scene) = start(1)
+Base.next(x::Scene, idx) = next(x.children, idx)
+Base.done(x::Scene, idx) = done(x.children, idx)
 
 
 attributes(scene::Scene) = copy(scene.data)
 
 
-const current_backend = Ref(:makie)
 
-function Scene(args...)
-    Scene{current_backend[]}(args...)
-end
-
-"""
-Creates a child scene containing a new window!
-"""
-function Scene(parent::Scene{Backend}, area, name = :scene, data = Dict{Symbol, Any}(); canvas = nothing,screen_kw_args...) where Backend
-    screen = getscreen(parent)
-    newscreen = Screen(screen; area = to_signal(area), screen_kw_args...)
-    if canvas == nothing
-        canvas = Canvas(newscreen)
-    end
-    data[:canvas] = to_node(canvas, identity, Any)
-    Scene{Backend}(name, parent, data, RefValue{Any}(nothing))
-end
-
-function Scene(parent::Scene{Backend}, scene::Scene, name = :scene) where Backend
-    Scene{Backend}(name, Nullable(parent), scene.data, RefValue{Any}(nothing))
-end
-
-function Scene(parent::Scene{Backend}, scene::Dict, name = :scene) where Backend
-    data = Dict{Symbol, Any}()
-    for (k, v) in scene
-        data[Symbol(k)] = scene_node(v)
-    end
-    Scene{Backend}(name, Nullable(parent), data, RefValue{Any}(nothing))
-end
-function Scene(parent::Scene{Backend}, name::Symbol = :scene; canvas = getcanvas(parent), attributes...) where Backend
-    push!(attributes, (:canvas, canvas))
-    Scene(parent, Dict{Symbol, Any}(attributes), name)
+function Scene(parent = Nullable{Scene}(), name = :root)
+    Scene(name, parent, Dict{Symbol, Any}(), Scene[], nothing, nothing, RefValue{Any}())
 end
 
 
-function (::Type{Scene{Backend}})(data::Dict, name = :scene) where Backend
-    Scene{Backend}(name, Nullable{Scene{Backend}}(), data, RefValue{Any}(nothing))
+function Scene()
+    signals = Dict(
+        :scroll => (0.0, 0.0),
+        :hasfocus => false,
+        :area => IRec(0, 0, 0, 0),
+        :dropped_files => String[],
+        :unicode_input => Char[],
+        :mouseposition => (0.0px, 0.0px),
+        :open => false,
+        :mouse_buttons => Set{Mouse.Button}(),
+        :keyboard_buttons => Set{Keyboard.Button}(),
+        :entered_window => false,
+    )
+    Scene(:root, Nullable{Scene}(), data)
 end
-
-function (::Type{Scene{Backend}})(pair1::Pair, tail::Pair...) where Backend
-    args = [pair1, tail...]
-    Scene(Dict(map(x-> x[1] => scene_node(x[2]), args)))
-end
-
 # I/O without libuv, for use after STDOUT is finalized
-raw_print(msg::AbstractString...) =
-    ccall(:write, Cssize_t, (Cint, Cstring, Csize_t), 1, join(msg), length(join(msg)))
+raw_print(msg::AbstractString...) = ccall(:write, Cssize_t, (Cint, Cstring, Csize_t), 1, join(msg), length(join(msg)))
 raw_println(msg::AbstractString...) = raw_print(msg..., "\n")
 
 
-"""
-Inserts `childscene` into the scene graph of `scene`. This will display the
-`childscene` in `scene`, when it is visible.
-`show!` will get called by default for any plotting command, and can be disabled
-and manually added via `show` by doing e.g.
-    ```
-    scene = Scene()
-    scatplot = scatter(rand(10), rand(10), show = false)
-    view!(scene, scatplot)
-    ```
-"""
-function show!(scene::Scene{Backend}, childscene::Scene{Backend}) where Backend
-    screen = getscreen(scene)
-    viz = native_visual(childscene)
-    viz == nothing && error("`childscene` does not contain any visual, so can't be added to `scene` with `show!`!")
-    canvas = nothing
-    if haskey(childscene, :canvas)
-        canvas = to_value(childscene[:canvas])
-    elseif haskey(scene, :canvas)
-        canvas = to_value(scene[:canvas])
-    end
-    if canvas == nothing || canvas.camera == nothing
-        initial_bb = data_boundingbox(childscene)
-        canvas = camera2d(scene, initial_bb)
-        scene[:canvas] = canvas
-    end
-    addcam(childscene, to_value(canvas).camera)
-    push!.(screen, extract_renderable(viz))
-    childscene
-end
-
-function insert_scene!(scene::Scene{Backend}, childscene) where Backend
-    uname = unique_predictable_name(scene, childscene.name)
-    scene.data[uname] = childscene
-    to_value(get(childscene, :show, false)) && show!(scene, childscene)
-    childscene
+function push!(scene::Scene, childscene::Scene)
+    push!(scene.children, childscene)
+    scene
 end
 
 """
@@ -207,40 +156,14 @@ end
 
 export center!
 
-function get_global_scene()
+function Plot()
     if isempty(global_scene)
         global_scene[] = Scene()
     end
     global_scene[]
 end
 
-render_frame(scene::Scene) = render_frame(rootscreen(scene))
-function render_frame(screen::GLWindow.Screen)
-    GLWindow.reactive_run_till_now()
-    GLWindow.render_frame(screen)
-    GLWindow.swapbuffers(screen)
-end
 
-function sort_zindex(rlist)
-    for elem in rlist # tuple
-
-    end
-end
-
-function render_loop(tsig, screen, framerate = 1/60)
-    while isopen(screen)
-        t = time()
-        GLWindow.poll_glfw() # GLFW poll
-        push!(tsig, t)
-        if Base.n_avail(Reactive._messages) > 0
-            render_frame(screen)
-        end
-        t = time() - t
-        GLWindow.sleep_pessimistic(framerate - t)
-    end
-    GLWindow.destroy!(screen)
-    return
-end
 
 
 include("themes.jl")
@@ -265,100 +188,6 @@ function block(scene::Scene)
     wait(render_task[])
 end
 
-function Scene(;
-        theme = default_theme,
-        resolution = nothing,
-        position = nothing,
-        color = :white,
-        monitor = nothing
-    )
-    w = nothing
-    scene = try
-        tsig = to_node(0.0)
-        if !isempty(global_scene)
-            oldscene = global_scene[]
-            oldscreen = getscreen(oldscene)
-            nw = GLWindow.nativewindow(oldscreen)
-            if position == nothing && isopen(nw)
-                position = GLFW.GetWindowPos(nw)
-            end
-            if resolution == nothing && isopen(nw)
-                resolution = GLFW.GetWindowSize(nw)
-            end
-            empty!(oldscreen)
-            empty!(oldscreen.cameras)
-            GLVisualize.empty_screens!()
-            empty!(oldscene)
-            empty!(global_scene)
-            oldscreen.color = to_color(nothing, color)
-            w = oldscreen
-        end
-        if w == nothing || !isopen(w)
-            if resolution == nothing
-                resolution = GLWindow.standard_screen_resolution()
-            end
-            w = Screen("Makie", resolution = resolution, color = to_color(nothing, color))
-            GLWindow.add_complex_signals!(w)
-        end
-        if !isassigned(render_task) || istaskdone(render_task[])
-            render_task[] = @async render_loop(tsig, w)
-        end
-        nw = GLWindow.nativewindow(w)
-        if resolution == nothing
-            resolution = GLWindow.standard_screen_resolution()
-        end
-        if position == nothing
-            position = GLFW.GetWindowPos(nw)
-        end
-        GLFW.SetWindowPos(nw, position...)
-        resize!(w, Int.(resolution)...)
-
-        GLVisualize.add_screen(w)
-        # These are derived signals, which we can't close and are sort of internal!
-        filtered = filter(w.inputs) do k, v
-            !(k in (
-                :cursor_position,
-                :window_size,
-                :framebuffer_size
-            ))
-        end
-        dict = map(filtered) do k_v
-            k_v[1] => to_node(k_v[2])
-        end
-        push!(dict[:window_open], true)
-        dict[:time] = tsig
-        scene = Scene(dict)
-        scene[:canvas] = to_node(Canvas(w), identity, Any)
-        add_mousebuttons(scene)
-        add_mousedrag(scene)
-        scene[:keyboardbuttons] = lift_node(scene[:buttons_pressed]) do x
-            map(Keyboard.Button, x)
-        end
-        push!(global_scene, scene)
-        # Okay here is the thing.
-        # We don't know at this point what kind of canvas we will have (2d/3d how big etc)
-        # So we have a bit of a bootstrapping problem. We solve it by inserting
-        # a canvas without camera as a node.
-        # whenever we have our first plot and know if it's 2D/3D we push a new
-        # canvas to this node. All attribute nodes are insert in this form:
-        # lift_node(scene[:canvas], node) do scene, value
-        #   convert_func(scene, value)
-        # end
-        # so whenever the canvas get's it's actually values, all conversion
-        # functions can to the correct conversions to the correct units etc.
-        # This solution is not perfect, since it will convert all attributes 2 times
-        # so we should rethink this approach
-        scene
-    catch e
-        if w != nothing
-            GLWindow.destroy!(w) # make sure we don't have a broken window when stuff errors
-        end
-        rethrow(e)
-    end
-    theme(scene) # apply theme
-    scene
-end
-
 Base.get(f, x::Scene, key::Symbol, tail::Symbol...) = haskey(x, key, tail...) ? x[key, tail...] : f()
 Base.get(x::Scene, key::Symbol, default) = haskey(x, key) ? x[key] : default
 
@@ -371,12 +200,12 @@ function setindex!(s::Scene, obj, key::Symbol, tail::Symbol...)
     s2[tail...] = obj
 end
 
-
 function Base.push!(s::Scene, obj::Scene)
     for (k, v) in obj.data
         s[k] = v
     end
 end
+
 function setindex!(s::Scene, obj, key::Symbol)
     if haskey(s, key) # if in dictionary, just push a new value to the signal
         node = s[key]
@@ -423,27 +252,6 @@ end
 to_value(scene::Scene, s1::Symbol, srest::Symbol...) = to_value(scene[s1, srest...])
 
 
-
-
-
-"""
-    @ref(arg)
-
-    ```julia
-        @ref Variable = Value # Inserts Value under name Variable into Scene
-
-        @ref Scene.Name1.Name2 # Syntactic sugar for `Scene[:Name1, :Name2]`
-        @ref Expr1, Expr1 # Syntactic sugar for `(@ref Expr1, @ref Expr2)`
-    ```
-"""
-macro ref(arg)
-    extract_fields(arg)
-end
-
-macro ref(args...)
-    Expr(:tuple, extract_fields.(args)...)
-end
-
 """
 Extract a default for `func` + `attribute`.
 If the attribute is in kw_args that will be selected.]
@@ -471,8 +279,4 @@ function find_default(scene, kw_args, func, attribute)
         error("Scene doesn't contain a theme and therefore doesn't provide any defaults.
             Please provide attribute $attribute for $func")
     end
-end
-
-function GeometryTypes.widths(scene::Scene)
-    widths(getscreen(scene))
 end
