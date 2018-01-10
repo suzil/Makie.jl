@@ -322,12 +322,22 @@ l[:textgap] = 5
 scene
 
 
-struct Scene{Typ}
-    values::Dict{Symbol, Any}
-    children::Vector
+struct Plot
+    attributes::Dict{Symbol, AbstractNode}
     transformation::Transformation
 end
 
+struct Scene
+    attributes::Dict{Symbol, AbstractNode}
+    plots::Vector{<: Plot}
+    children::Vector{Scene}
+    canvas::Canvas
+    screen::RefValue{<: Screen}
+end
+struct Screen{Backend}
+
+
+end
 function insert_defaults!(scene::Lines, kw_args)
     if haskeys(kw_args, :intensity)
         colormap = to_colormap => theme.colormap

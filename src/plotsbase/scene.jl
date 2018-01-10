@@ -164,8 +164,6 @@ function Plot()
 end
 
 
-
-
 include("themes.jl")
 
 close_all_nodes(x::AbstractNode) = closenode!(x)
@@ -182,11 +180,7 @@ function Base.empty!(scene::Scene)
     empty!(scene.data)
 end
 
-const render_task = RefValue{Task}()
 
-function block(scene::Scene)
-    wait(render_task[])
-end
 
 Base.get(f, x::Scene, key::Symbol, tail::Symbol...) = haskey(x, key, tail...) ? x[key, tail...] : f()
 Base.get(x::Scene, key::Symbol, default) = haskey(x, key) ? x[key] : default
