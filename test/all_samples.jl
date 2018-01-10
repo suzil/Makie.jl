@@ -320,3 +320,51 @@ l[:strokewidth] = 1
 l[:textsize] = 15
 l[:textgap] = 5
 scene
+
+
+struct Scene{Typ}
+    values::Dict{Symbol, Any}
+    children::Vector
+    transformation::Transformation
+end
+
+function insert_defaults!(scene::Lines, kw_args)
+    if haskeys(kw_args, :intensity)
+        colormap = to_colormap => theme.colormap
+        intensity = to_intensity => intensity
+        cnorm_calc(scene, cnorm) = to_colornorm(scene, cnorm, intensity)
+        colornorm = cnorm_calc => nothing
+    else
+        color = to_color => :red
+    end
+    linewidth = to_float => theme.linewidth
+    linestyle = to_linestyle => nothing
+end
+
+# trait for combinations of arguments
+plotstyle(kw_args, ::AbstractVector, ::AbstractVector) = Lines()
+
+lines(parent::Scene, args...; kw_args...) = plot!(parent, Lines(), args...; kw_args...)
+
+
+function plot!(parent::Scene, plot::T, inherited::Scene, args...; kw_args...) where T
+    insert_defaults!(plot, merge(inherited, kw_args))
+    push!(parent, plot)
+    plot
+end
+
+function plot!(parent::Scene, args...; kw_args...)
+    style = plotstyle(args..., kw_args)
+    plot!(parent, style, inheritance, args...; kw_args...) where T
+end
+
+
+function push!(display, plot::Lines)
+    converted = map(plot) do k_v
+        k, v = k_v
+    end
+    push!(display, NativeObject(converted))
+end
+
+
+x = plot(rand(10), color = :red)
