@@ -378,3 +378,119 @@ end
 
 
 x = plot(rand(10), color = :red)
+
+using Makie, GeometryTypes, Colors
+using Reactive
+using Juno
+using DSP
+using LibSndFile, FileIO
+using PortAudio, SampledSignals
+
+N = 1024 # size of audio read
+N2 = N÷2+1 # size of rfft output
+D = 200 # number of bins to display
+M = 20 # number of lines to draw
+src = PortAudioStream(1, 2, blocksize=N)
+buf = Array{Float32}(N)
+fftbuf = Array{Complex{Float32}}(N2)
+magbuf = Array{Float32}(N2)
+fftplan = plan_rfft(buf; flags=FFTW.EXHAUSTIVE)
+
+scene = Scene(resolution=(500,500))
+ax = axis(0:0.1:1, 0:0.1:1, 0:0.1:0.5)
+center!(scene)
+
+ls = map(1:M) do _
+    yoffset = to_node(to_value(scene[:time]))
+    offset = lift_node(scene[:time], yoffset) do t, yoff
+        Point3f0(0.0f0, (t-yoff)*4, 0.0f0)
+    end
+    l = lines(linspace(0,1,D), 0.0f0, zeros(Float32, D),
+        offset=offset, color=(:black, 0.1))
+    (yoffset, l)
+end
+
+while isopen(scene[:screen])
+    for (yoffset, line) in ls
+        isopen(scene[:screen]) || break
+        read!(src, buf)
+        A_mul_B!(fftbuf, fftplan, buf)
+        @. magbuf = log(clamp(abs(fftbuf), 0.0001f0, Inf32))/10f0+1f0
+        line[:z] = view(magbuf, 1:D)
+        push!(yoffset, to_value(scene[:time]))
+    end
+end
+
+
+
+using Makie, GeometryTypes
+using PortAudio
+
+N = 1024 # size of audio read
+N2 = N÷2+1 # size of rfft output
+D = 200 # number of bins to display
+M = 200 # amount of history to keep
+src = PortAudioStream(1, 2, blocksize=N)
+buf = Array{Float32}(N)
+fftbuf = Array{Complex{Float32}}(N2)
+dispbuf = zeros(Float32, D, M)
+fftplan = plan_rfft(buf; flags=FFTW.EXHAUSTIVE)
+
+"""
+Slide the values in the given matrix to the right by 1.
+The rightmosts column is discarded and the leftmost column is
+left alone.
+"""
+function shift1!(buf::AbstractMatrix)
+    for col in size(buf,2):-1:2
+        @. buf[:, col] = buf[:, col-1]
+    end
+end
+
+"""
+Read a block of audio, FFT it, and write it to the beginning of the buffer
+"""
+function readtobuf()
+    read!(src, buf)
+    A_mul_B!(fftbuf, fftplan, buf)
+    shift1!(dispbuf)
+    @. dispbuf[end:-1:1,1] = log(clamp(abs(fftbuf[1:D]), 0.0001, Inf))
+end
+
+scene = Scene(resolution=(500,500))
+
+#pre-fill the display buffer so we can do a reasonable colormap
+for _ in 1:M
+    readtobuf()
+end
+
+hm = heatmap(dispbuf)
+center!(scene)
+
+while isopen(scene[:screen])
+    readtobuf()
+    hm[:heatmap] = dispbuf
+end
+
+
+using Makie, GeometryTypes
+scene = Scene()
+for i in 1:2, j in 1:2
+   heatmap((0.0, 0.10), (0.0, 0.24), rand(5, 5), offset = (i*8, j*8))
+end
+center!(scene)
+
+
+function scatter(bla...)
+    plot(Scatter(), bla...)
+end
+function plot(::Scatter, bla...)
+    splot = ...
+    plot(splot)
+end
+function plot(plot_object::Plot)
+    bb = data_boundingbox(plot_object)
+    add_camera_from_bb_or_scene!(plot_object, bb)
+    add_axis_from_cam_or_scene!(plot_object, cam)
+    plot_object
+end
