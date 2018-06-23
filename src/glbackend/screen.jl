@@ -1,27 +1,43 @@
+import .GLAbstraction: Pipeline
 const ScreenID = UInt8
 const ZIndex = Int
 const ScreenArea = Tuple{ScreenID, Node{IRect2D}, Node{Bool}, Node{RGBAf0}}
 
+# The situation right now is that there is a 'queue' of pipelines (i.e. a `Vector` of them)
+# and a dictionary with RObjs that should be rendered in them. When an RObj gets
+# pushed to the screen there is an automatic check for the correct render pipeline.
+# If not it will be created and added to the 'queue' of pipelines,
+# a new entry in the renderlist will be created with the pipeline's tag and
+# a length 1 `Vector` with the newly added RObj. Subsequent RObjs requesting the
+# same pipeline will be pushed to the same `Vector`.
+# This is hopefully a relatively temporary solution to get this up and running.
+# It should at least give a semi good starting point to find a good balance
+# between performant and flexible, although I think an altogther better method
+# should be possible.
 mutable struct Screen <: AbstractScreen
     glscreen::GLFW.Window
-    framebuffer::GLFramebuffer
     rendertask::RefValue{Task}
     screen2scene::Dict{WeakRef, ScreenID}
     screens::Vector{ScreenArea}
-    renderlist::Vector{Tuple{ZIndex, ScreenID, RenderObject}}
+    renderlist::Dict{Symbol, Vector{Tuple{ZIndex, ScreenID, RenderObject}}}
     cache::Dict{UInt64, RenderObject}
     cache2plot::Dict{UInt16, AbstractPlot}
+    fullscreenvao::Int
+    size::Tuple{Int,Int}
+    pipelines::Vector{Pipeline}
     function Screen(
             glscreen::GLFW.Window,
-            framebuffer::GLFramebuffer,
             rendertask::RefValue{Task},
             screen2scene::Dict{WeakRef, ScreenID},
             screens::Vector{ScreenArea},
-            renderlist::Vector{Tuple{ZIndex, ScreenID, RenderObject}},
+            renderlist::Dict{Symbol, Vector{Tuple{ZIndex, ScreenID, RenderObject}}},
             cache::Dict{UInt64, RenderObject},
             cache2plot::Dict{UInt16, AbstractPlot},
+            size::Tuple{Int,Int},
+            pipelines::Vector{Pipeline}
         )
-        obj = new(glscreen, framebuffer, rendertask, screen2scene, screens, renderlist, cache, cache2plot)
+        #TODO not sure if this is very correct
+        obj = new(glscreen, rendertask, screen2scene, screens, renderlist, cache, cache2plot, glGenVertexArrays(), size, pipelines)
         jl_finalizer(obj) do obj
             # save_print("Freeing screen")
             empty!.((obj.renderlist, obj.screens, obj.cache, obj.screen2scene, obj.cache2plot))
@@ -30,9 +46,10 @@ mutable struct Screen <: AbstractScreen
         obj
     end
 end
-GeometryTypes.widths(x::Screen) = size(x.framebuffer.color)
+# GeometryTypes.widths(x::Screen) = size(x.framebuffer.color)
 
 function insertplots!(screen::Screen, scene::Scene)
+    #I presume the elem are all the robjs that compose the plot
     for elem in scene.plots
         insert!(screen, scene, elem)
     end
@@ -61,18 +78,33 @@ function Base.display(screen::Screen, scene::Scene)
     return
 end
 
+###WIP shadercleanup
 function colorbuffer(screen::Screen)
     GLFW.PollEvents()
     yield()
     render_frame(screen) # let it render
     GLFW.SwapBuffers(to_native(screen))
     glFinish() # block until opengl is done rendering
-    buffer = gpu_data(screen.framebuffer.color)
-    return rotl90(RGB{N0f8}.(ImageCore.clamp01nan.(buffer)))
+    #very ugly
+    #TODO screencleanup: What if multiple pipelines rendered?
+    # Should we use the same main color framebuffer everywhere?
+    # Ask Simon
+    buffer = !isempty(screen.pipelines) ?
+                gpu_data(screen.pipelines[1].passes[1].target, 1) :
+                zeros(RGB{N0f8}, size(screen))
+
+
+    #This assumes that the color is stored
+                                             #in GL_COLOR_ATTACHMENT0
+    return rotl90(RGB{N0f8}.(Images.clamp01nan.(buffer)))
 end
 
+Base.size(screen::Screen) = screen.size
 
 Base.isopen(x::Screen) = isopen(x.glscreen)
+
+# TEMP with regards to the pipeline <=> RObj system
+###WIP shadercleanup
 function Base.push!(screen::Screen, scene::Scene, robj)
     filter!(screen.screen2scene) do k, v
         k.value != nothing
@@ -83,29 +115,24 @@ function Base.push!(screen::Screen, scene::Scene, robj)
         push!(screen.screens, (id, scene.px_area, Node(true), bg))
         id
     end
-    push!(screen.renderlist, (0, screenid, robj))
+    #TEMP this might be done better
+    #TODO shadercleanup
+    #TODO screencleanup: fbo should be created somewhere else
+    pipesym = get(robj.uniforms, :pipeline, :default)
+    if !haskey(screen.renderlist, pipesym)
+        push!(screen, makiepipeline(pipesym, defaultframebuffer(size(screen)), robj.uniforms[:shader]))
+        screen.renderlist[pipesym] = [(0, screenid, robj)]
+    else
+        push!(screen.renderlist[pipesym], (0, screenid, robj))
+    end
+
     return robj
 end
 
+Base.push!(screen::Screen, pipeline::Pipeline) = push!(screen.pipelines, pipeline)
+
 to_native(x::Screen) = x.glscreen
 const gl_screens = GLFW.Window[]
-
-
-"""
-OpenGL shares all data containers between shared contexts, but not vertexarrays -.-
-So to share a robjs between a context, we need to rewrap the vertexarray into a new one for that
-specific context.
-"""
-function rewrap(robj::RenderObject{Pre}) where Pre
-    RenderObject{Pre}(
-        robj.main,
-        robj.uniforms,
-        GLVertexArray(robj.vertexarray),
-        robj.prerenderfunction,
-        robj.postrenderfunction,
-        robj.boundingbox,
-    )
-end
 
 function Screen(;resolution = (10, 10), visible = true, kw_args...)
     if !isempty(gl_screens)
@@ -136,16 +163,16 @@ function Screen(;resolution = (10, 10), visible = true, kw_args...)
         window,
         (window, w::Cint, h::Cint)-> push!(resolution_signal, Int.((w, h)))
     )
-    fb = GLFramebuffer(resolution_signal)
     screen = Screen(
-        window, fb,
+        window,
         RefValue{Task}(),
         Dict{WeakRef, ScreenID}(),
         ScreenArea[],
-        Tuple{ZIndex, ScreenID, RenderObject}[],
+        Dict{Symbol, Vector{Tuple{ZIndex, ScreenID, RenderObject}}}(),
         Dict{UInt64, RenderObject}(),
         Dict{UInt16, AbstractPlot}(),
-    )
+        resolution,
+        Pipeline[])
     screen.rendertask[] = @async(renderloop(screen))
     screen
 end
