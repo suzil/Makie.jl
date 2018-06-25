@@ -137,7 +137,6 @@ function (rp::RenderPass{:default})(screen::Screen, renderlist)
         Reactive.value(found) || continue
         a = rect[]
         glViewport(minimum(a)..., widths(a)...)
-        # glStencilFunc(GL_EQUAL, screenid, 0xff) #TODO rendercleanup: Can this be somewhere else?
         for (key,value) in elem.uniforms[:shader].uniformloc #TODO uniformbuffer: This should be inside a buffer I think
             if haskey(elem.uniforms, key) && elem.uniforms[key] != nothing
                 if length(value) == 1
