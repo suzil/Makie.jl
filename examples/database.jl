@@ -518,8 +518,8 @@ example2source(entry; kw_args...) = sprint(io-> print_code(io, entry; kw_args...
 Walks through all examples matching tags and calls `f(entry, source)`, with
 source being the source of the example as a string
 """
-function examples2source(f, tags...; kw_args...)
-    enumerate_examples(tags...) do entry
+function examples2source(f, tags...; exclude_tags = nothing, kw_args...)
+    enumerate_examples(tags..., exclude_tags = exclude_tags) do entry
         f(entry, example2source(entry; kw_args...))
     end
 end

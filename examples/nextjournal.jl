@@ -12,19 +12,14 @@ open("makie_article.md", "w") do io
     # Makie examples
 
     ```Julia
+    ENV[\"DISPLAY\"] = \":0\"
     using Makie
-    # work around the fact that nextjournal doesn't have display incorperated correctly
-    output(x::String) = cp(x, \"/results/$(basename(x))\")
+    output(x::String) = nothing
     output(x::Scene) = Makie.save(\"/results/test.png\", x)
-    function output(x::Stepper)
-        for file in readdir(x.path)
-            cp(joinpath(x.path, file), \"/results/\")
-        end
-    end
-
+    output(x::Stepper) = nothing
     ```
     """)
-    examples2source(scope_start = "result = let\n", scope_end = "end", indent = "   ", outputfile = outputfile) do entry, source
+    examples2source(exclude_tags = ["test"], scope_start = "result = let\n", scope_end = "end", indent = "   ", outputfile = outputfile) do entry, source
         println(io, "## ", entry.title)
         println(io, "\n```julia")
         println(io, source)

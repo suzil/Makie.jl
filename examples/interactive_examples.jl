@@ -121,7 +121,7 @@ center!(scene)
 scene
 
 
-using Makie, Colors
+using Makie, Colors, Reactive
 using AbstractPlotting: modelmatrix, textslider, colorswatch, hbox!
 
 scene = Scene(resolution = (1000, 1000))

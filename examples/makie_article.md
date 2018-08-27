@@ -13,6 +13,169 @@ end
 
 ```
 
+## Tutorial simple scatter
+
+```julia
+using Makie
+
+result = let
+    x = rand(10)
+    y = rand(10)
+    colors = rand(10)
+
+    scene = scatter(x, y, color = colors)
+
+end
+output(result)
+
+```
+
+## Tutorial markersize
+
+```julia
+using Makie
+
+result = let
+    x = 1:10
+    y = 1:10
+    sizevec = [s for s = 1:length(x)] ./ 10
+
+    scene = scatter(x, y, markersize = sizevec)
+
+end
+output(result)
+
+```
+
+## Tutorial simple line
+
+```julia
+using Makie
+
+result = let
+    x = range(0, stop = 2pi, length = 40)
+    f(x) = sin.(x)
+    y = f(x)
+
+    scene = lines(x, y, color = :blue)
+
+end
+output(result)
+
+```
+
+## Tutorial adding to a scene
+
+```julia
+using Makie
+
+result = let
+    x = range(0, stop = 2pi, length = 80)
+    f1(x) = sin.(x)
+    f2(x) = exp.(-x) .* cos.(2pi*x)
+    y1 = f1(x)
+    y2 = f2(x)
+
+    scene = lines(x, y1, color = :blue)
+    scatter!(scene, x, y1, color = :red, markersize = 0.1)
+
+    lines!(scene, x, y2, color = :black)
+    scatter!(scene, x, y2, color = :green, marker = :utriangle, markersize = 0.1)
+
+end
+output(result)
+
+```
+
+## Tutorial adjusting scene limits
+
+```julia
+using Makie
+
+result = let
+    x = range(0, stop = 10, length = 40)
+    y = x
+    #= specify the scene limits, note that the arguments for FRect are
+        x_min, y_min, x_dist, y_dist,
+        therefore, the maximum x and y limits are then x_min + x_dist and y_min + y_dist
+    =#
+    limits = FRect(-5, -10, 20, 30)
+
+    scene = lines(x, y, color = :blue, limits = limits)
+
+end
+output(result)
+
+```
+
+## Tutorial basic theming
+
+```julia
+using Makie
+
+result = let
+    x = range(0, stop = 2pi, length = 40)
+    f(x) = cos.(x)
+    y = f(x)
+    scene = lines(x, y, color = :blue)
+
+    axis = scene[Axis] # get the axis object from the scene
+    axis[:grid][:linecolor] = ((:red, 0.5), (:blue, 0.5))
+    axis[:names][:textcolor] = ((:red, 1.0), (:blue, 1.0))
+    axis[:names][:axisnames] = ("x", "y = cos(x)")
+    scene
+
+end
+output(result)
+
+```
+
+## Tutorial heatmap
+
+```julia
+using Makie
+
+result = let
+    data = rand(50, 50)
+    scene = heatmap(data)
+
+end
+output(result)
+
+```
+
+## Tutorial linesegments
+
+```julia
+using Makie
+
+result = let
+    points = [
+        Point2f0(0, 0) => Point2f0(5, 5);
+        Point2f0(15, 15) => Point2f0(25, 25);
+        Point2f0(0, 15) => Point2f0(35, 5);
+        ]
+    scene = linesegments(points, color = :red, linewidth = 2)
+
+end
+output(result)
+
+```
+
+## Tutorial barplot
+
+```julia
+using Makie
+
+result = let
+    data = sort(randn(100))
+    barplot(data)
+
+end
+output(result)
+
+```
+
 ## Test heatmap + image overlap
 
 ```julia
@@ -33,18 +196,17 @@ output(result)
 using Makie
 
 result = let
-    scene = Scene(resolution = (500, 500))
-
+    scene = Scene()
     f(t, v, s) = (sin(v + t) * s, cos(v + t) * s)
     time = Node(0.0)
-    p1 = scatter!(scene, lift(t-> f.(t, linspace(0, 2pi, 50), 1), time))[end]
-    p2 = scatter!(scene, lift(t-> f.(t * 2.0, linspace(0, 2pi, 50), 1.5), time))[end]
+    p1 = scatter!(scene, lift(t-> f.(t, range(0, stop = 2pi, length = 50), 1), time))[end]
+    p2 = scatter!(scene, lift(t-> f.(t * 2.0, range(0, stop = 2pi, length = 50), 1.5), time))[end]
     lines = lift(p1[1], p2[1]) do pos1, pos2
         map((a, b)-> (a, b), pos1, pos2)
     end
     linesegments!(scene, lines)
     N = 150
-    record(scene, "/results/interaction.gif", linspace(0, 10, N)) do i
+    record(scene, "/results/interaction.gif", range(0, stop = 10, length = N)) do i
         push!(time, i)
    end
 
@@ -74,7 +236,7 @@ using Makie
  using ImageFiltering
 
 result = let
-    x = linspace(-2, 2, 21)
+    x = range(-2, stop = 2, length = 21)
     y = x
     z = x .* exp.(-x .^ 2 .- (y') .^ 2)
     scene = contour(x, y, z, levels = 10, linewidth = 3)
@@ -209,8 +371,9 @@ output(result)
 using Makie
 
 result = let
-    p1 = heatmap(rand(100, 50), interpolate = true)
-    p2 = heatmap(rand(100, 50), interpolate = false)
+    data = rand(100, 50)
+    p1 = heatmap(data, interpolate = true)
+    p2 = heatmap(data, interpolate = false)
     scene = AbstractPlotting.vbox(p1, p2)
     text!(campixel(p1), "Interpolate = true", position = widths(p1) .* Vec(0.5, 1), align = (:center, :top), raw = true)
     text!(campixel(p2), "Interpolate = false", position = widths(p2) .* Vec(0.5, 1), align = (:center, :top), raw = true)
@@ -259,7 +422,7 @@ output(result)
 
 ```julia
 using Makie
-using GeometryTypes
+ using GeometryTypes
 
 result = let
     scene = Scene(resolution = (500, 500))
@@ -284,7 +447,7 @@ output(result)
 using Makie
 
 result = let
-    r = linspace(-10, 10, 512)
+    r = range(-10, stop = 10, length = 512)
     z = ((x, y)-> sin(x) + cos(y)).(r, r')
     contour(r, r, z, levels = 5, color = :viridis, linewidth = 3)
 
@@ -299,8 +462,8 @@ output(result)
 using Makie
 
 result = let
-    y = linspace(-0.997669, 0.997669, 23)
-    contour(linspace(-0.99, 0.99, 23), y, rand(23, 23), levels = 10)
+    y = range(-0.997669, stop = 0.997669, length = 23)
+    contour(range(-0.99, stop = 0.99, length = 23), y, rand(23, 23), levels = 10)
 
 end
 output(result)
@@ -368,7 +531,7 @@ result = let
     scene = Scene(resolution = (500, 500))
     pos = (500, 500)
     posis = Point2f0[]
-    for r in linspace(0, 2pi, 20)
+    for r in range(0, stop = 2pi, length = 20)
         p = pos .+ (sin(r)*100.0, cos(r) * 100)
         push!(posis, p)
         t = text!(
@@ -380,6 +543,37 @@ result = let
         )
     end
     scatter!(scene, posis, markersize = 10)
+
+end
+output(result)
+
+```
+
+## The famous iris example
+
+```julia
+using Makie
+ using DataFrames, RDatasets # do Pkg.add.(["DataFrames", "RDatasets"]) if you don't have these packages installed
+
+result = let
+    iris = dataset("datasets", "iris")
+
+    x = iris[:SepalWidth]
+    y = iris[:SepalLength]
+
+    scene = Scene()
+    colors = [:red, :green, :blue]
+    i = 1 #color incrementer
+    for sp in unique(iris[:Species])
+        idx = iris[:Species] .== sp
+        sel = iris[idx, [:SepalWidth, :SepalLength]]
+        scatter!(scene, sel[:,1], sel[:,2], color = colors[i], limits = FRect(1.5, 4.0, 3.0, 4.0))
+        global i = i+1
+    end
+    scene
+    axis = scene[Axis] # get axis
+    axis[:names][:axisnames] = ("Sepal width", "Sepal length")
+    scene
 
 end
 output(result)
@@ -487,10 +681,10 @@ result = let
         r == 0.0 ? 1f0 : (sin(r)/r)
     end
     N = 30
-    lspace = linspace(-10, 10, N)
+    lspace = range(-10, stop = 10, length = N)
     z = Float32[xy_data(x, y) for x in lspace, y in lspace]
-    range = linspace(0, 3, N)
-    wireframe(range, range, z)
+    r = range(0, stop = 3, length = N)
+    wireframe(r, r, z)
 
 end
 output(result)
@@ -508,11 +702,11 @@ result = let
         r = sqrt(x^2 + y^2)
         r == 0.0 ? 1f0 : (sin(r)/r)
     end
-    lspace = linspace(-10, 10, N)
+    lspace = range(-10, stop = 10, length = N)
     z = Float32[xy_data(x, y) for x in lspace, y in lspace]
-    range = linspace(0, 3, N)
+    r = range(0, stop = 3, length = N)
     surface(
-        range, range, z,
+        r, r, z,
         colormap = :Spectral
     )
 
@@ -532,7 +726,7 @@ result = let
         r = sqrt(x^2 + y^2)
         r == 0.0 ? 1f0 : (sin(r)/r)
     end
-    r = linspace(-2, 2, N)
+    r = range(-2, stop = 2, length = N)
     surf_func(i) = [Float32(xy_data(x*i, y*i)) for x = r, y = r]
     surface(
         r, r, surf_func(10),
@@ -551,7 +745,7 @@ using Makie
 
 result = let
     scene = Scene()
-    x = linspace(0, 3pi)
+    x = range(0, stop = 3pi)
     lines!(scene, x, sin.(x))
     lines!(scene, x, cos.(x), color = :blue)
 
@@ -615,8 +809,8 @@ result = let
     f(t, v, s) = (sin(v + t) * s, cos(v + t) * s, (cos(v + t) + sin(v)) * s)
     t = Node(Base.time()) # create a life signal
     limits = FRect3D(Vec3f0(-1.5, -1.5, -3), Vec3f0(3, 3, 6))
-    p1 = meshscatter!(scene, lift(t-> f.(t, linspace(0, 2pi, 50), 1), t), markersize = 0.05)[end]
-    p2 = meshscatter!(scene, lift(t-> f.(t * 2.0, linspace(0, 2pi, 50), 1.5), t), markersize = 0.05)[end]
+    p1 = meshscatter!(scene, lift(t-> f.(t, range(0, stop = 2pi, length = 50), 1), t), markersize = 0.05)[end]
+    p2 = meshscatter!(scene, lift(t-> f.(t * 2.0, range(0, stop = 2pi, length = 50), 1.5), t), markersize = 0.05)[end]
 
     lines = lift(p1[1], p2[1]) do pos1, pos2
         map((a, b)-> (a, b), pos1, pos2)
@@ -637,13 +831,14 @@ output(result)
 
 ```julia
 using Makie
+ using LinearAlgebra
 
 result = let
     function test(x, y, z)
         xy = [x, y, z]
-        ((xy') * eye(3, 3) * xy) / 20
+        ((xy') * Matrix(I, 3, 3) * xy) / 20
     end
-    x = linspace(-2pi, 2pi, 100)
+    x = range(-2pi, stop = 2pi, length = 100)
     scene = Scene()
     c = contour!(scene, x, x, x, test, levels = 6, alpha = 0.3)[end]
     xm, ym, zm = minimum(scene.limits[])
@@ -667,7 +862,7 @@ result = let
         r = sqrt(x*x + y*y)
         r == 0.0 ? 1f0 : (sin(r)/r)
     end
-    r = linspace(-1, 1, 100)
+    r = range(-1, stop = 1, length = 100)
     contour3d(r, r, (x,y)-> xy_data(10x, 10y), levels = 20, linewidth = 3)
 
 end
@@ -679,6 +874,7 @@ output(result)
 
 ```julia
 using Makie
+ using LinearAlgebra
 
 result = let
     function SphericalToCartesian(r::T,θ::T,ϕ::T) where T<:AbstractArray
@@ -724,6 +920,7 @@ output(result)
 
 ```julia
 using Makie
+ using LinearAlgebra
 
 result = let
     n = 20
@@ -874,7 +1071,7 @@ result = let
     meshS = GLNormalMesh(large_sphere, 20)
     # define colors, markersizes and rotations
     pG = [Point3f0(pts[k, 1], pts[k, 2], pts[k, 3]) for k = 1:np]
-    lengthsC = sqrt.(sum((pts[edges[:,1], :] .- pts[edges[:, 2], :]) .^ 2, 2))
+    lengthsC = sqrt.(sum((pts[edges[:,1], :] .- pts[edges[:, 2], :]) .^ 2, dims = 2))
     sizesC = [Vec3f0(radius, radius, lengthsC[i]) for i = 1:ne]
     sizesC = [Vec3f0(1., 1., 1.) for i = 1:ne]
     colorsp = [RGBA{Float32}(rand(), rand(), rand(), 1.) for i = 1:np]
@@ -932,6 +1129,7 @@ output(result)
 
 ```julia
 using Makie
+ using LinearAlgebra
 
 result = let
     scatter(
@@ -975,7 +1173,7 @@ result = let
         r == 0.0 ? 1f0 : (sin(r)/r)
     end
 
-    r = linspace(-2, 2, 50)
+    r = range(-2, stop = 2, length = 50)
     surf_func(i) = [Float32(xy_data(x*i, y*i)) for x = r, y = r]
     z = surf_func(20)
     surf = surface!(scene, r, r, z)[end]
@@ -985,7 +1183,7 @@ result = let
     )
     N = 150
     scene
-    record(scene, "/results/animated_surface_and_wireframe.gif", linspace(5, 40, N)) do i
+    record(scene, "/results/animated_surface_and_wireframe.gif", range(5, stop = 40, length = N)) do i
         surf[3] = surf_func(i)
    end
 
@@ -998,6 +1196,7 @@ output(result)
 
 ```julia
 using Makie
+ using LinearAlgebra
 
 result = let
     x = Makie.loadasset("cat.obj")
@@ -1037,7 +1236,7 @@ result = let
         scene,
         (rand(Point3f0, stars) .- 0.5) .* 10,
         glowwidth = 0.005, glowcolor = :white, color = RGBAf0(0.8, 0.9, 0.95, 0.4),
-        markersize = rand(linspace(0.0001, 0.01, 100), stars),
+        markersize = rand(range(0.0001, stop = 0.01, length = 100), stars),
         show_axis = false
     )
     update_cam!(scene, FRect3D(Vec3f0(-2), Vec3f0(4)))
@@ -1115,7 +1314,7 @@ result = let
     end
     rings = [(0.1f0, 1.0f0, 0.00001f0, Point2f0(0.2, 0.1)), (0.1f0, 0.0f0, 0.0002f0, Point2f0(0.052, 0.05))]
     N2 = 25000
-    t_audio = sin.(linspace(0, 10pi, N2)) .+ (cos.(linspace(-3, 7pi, N2)) .* 0.6) .+ (rand(Float32, N2) .* 0.1) ./ 2f0
+    t_audio = sin.(range(0, stop = 10pi, length = N2)) .+ (cos.(range(-3, stop = 7pi, length = N2)) .* 0.6) .+ (rand(Float32, N2) .* 0.1) ./ 2f0
     start = time()
     t = (time() - start) * 100
     pos = calcpositions.((rings,), 1:N2, t, (t_audio,))
@@ -1145,7 +1344,7 @@ output(result)
 using Makie
 
 result = let
-    us = linspace(0, 1, 100)
+    us = range(0, stop = 1, length = 100)
     scene = Scene()
     scene = linesegments!(scene, FRect3D(Vec3f0(0, -1, 0), Vec3f0(1, 2, 2)))
     p = lines!(scene, us, sin.(us .+ time()), zeros(100), linewidth = 3)[end]
@@ -1163,7 +1362,7 @@ result = let
                 color = colors[length(lineplots)],
                 linewidth = 3
             )[end]
-            unshift!(lineplots, p)
+            pushfirst!(lineplots, p)
             translate!(p, 0, 0, 0)
             #TODO automatically insert new plots
             insert!(Makie.global_gl_screen(), scene, p)
@@ -1185,18 +1384,41 @@ output(result)
 
 ```
 
-## Interaction with Mouse
+## Surface + wireframe + contour
 
 ```julia
 using Makie
 
 result = let
+    N = 51
+    x = range(-2, stop = 2, length = N)
+    y = x
+    z = (-x .* exp.(-x .^ 2 .- (y') .^ 2)) .* 4
+
+    scene = wireframe(x, y, z)
+    xm, ym, zm = minimum(scene.limits[])
+    scene = surface!(scene, x, y, z)
+    contour!(scene, x, y, z, levels = 15, linewidth = 2, transformation = (:xy, zm))
+    scene
+
+end
+output(result)
+
+```
+
+## Interaction with Mouse
+
+```julia
+using Makie
+ using LinearAlgebra
+
+result = let
     scene = Scene()
-    r = linspace(0, 3, 4)
+    r = range(0, stop = 3, length = 4)
     cam2d!(scene)
     time = Node(0.0)
     pos = lift(scene.events.mouseposition, time) do mpos, t
-        map(linspace(0, 2pi, 60)) do i
+        map(range(0, stop = 2pi, length = 60)) do i
             circle = Point2f0(sin(i), cos(i))
             mouse = to_world(scene, Point2f0(mpos))
             secondary = (sin((i * 10f0) + t) * 0.09) * normalize(circle)
@@ -1216,14 +1438,14 @@ result = let
     display(Makie.global_gl_screen(), scene)
 
     p1[:color] = RGBAf0(1, 0, 0, 0.1)
-    p2[:marker] = 'π'
+    # p2[:marker] = 'π' #TODO fix this
     p2[:markersize] = 0.2
 
     # push a reasonable mouse position in case this is executed as part
     # of the documentation
     push!(scene.events.mouseposition, (250.0, 250.0))
     N = 50
-    record(scene, "/results/interaction_with_mouse.gif", linspace(0.01, 0.4, N)) do i
+    record(scene, "/results/interaction_with_mouse.gif", range(0.01, stop = 0.4, length = N)) do i
         push!(scene.events.mouseposition, (250.0, 250.0))
         p2[:markersize] = i
         push!(time, time[] + 0.1)
@@ -1309,8 +1531,8 @@ result = let
     N = 100
     scene = scatter([0], [0], marker = '❤', markersize = 0.5, color = :red, raw = true)
     s = scene[end] # last plot in scene
-    record(scene, "/results/pulsing_marker.gif", linspace(0, 10pi, N)) do i
-        s[:markersize] = (cos(i) + 1) / (5 + 1)
+    record(scene, "/results/pulsing_marker.gif", range(0, stop = 10pi, length = N)) do i
+        s[:markersize] = (cos(i) + 1) / 4 + 0.2
    end
 
 end
@@ -1329,12 +1551,12 @@ result = let
     f(v, t) = sin(v + t)
     scene = lines!(
         scene,
-        lift(t -> f.(linspace(0, 2pi, 50), t), time),
+        lift(t -> f.(range(0, stop = 2pi, length = 50), t), time),
         color = :blue
     )
     p1 = scene[end];
     N = 100
-    record(scene, "/results/travelling_wave.gif", linspace(0, 4pi, N)) do i
+    record(scene, "/results/travelling_wave.gif", range(0, stop = 4pi, length = N)) do i
         time[] = i
    end
 
@@ -1367,9 +1589,9 @@ result = let
     R = 2
     theta = 4pi
     h = 5
-    x = [R .* (t/3) .* cos(t) for t = linspace(0, theta, N)]
-    y = [R .* (t/3) .* sin(t) for t = linspace(0, theta, N)]
-    z = linspace(0, h, N)
+    x = [R .* (t/3) .* cos(t) for t = range(0, stop = theta, length = N)]
+    y = [R .* (t/3) .* sin(t) for t = range(0, stop = theta, length = N)]
+    z = range(0, stop = h, length = N)
     meshscatter(x, y, z, markersize = 0.5, color = to_colormap(:viridis, N))
 
 end
@@ -1426,8 +1648,8 @@ result = let
         c = to_colormap(cmap)
         cbar = image!(
             scene,
-            linspace(0, 10, length(c)),
-            linspace(0, 1, length(c)),
+            range(0, stop = 10, length = length(c)),
+            range(0, stop = 1, length = length(c)),
             reshape(c, (1, length(c))),
             show_axis = false
         )[end]
@@ -1476,64 +1698,6 @@ result = let
         textsize = 0.4,
         raw = true
     )
-
-end
-output(result)
-
-```
-
-## Theming
-
-```julia
-using Makie
-
-result = let
-    new_theme = Theme(
-        resolution = (500, 500),
-        linewidth = 3,
-        colormap = :RdYlGn,
-        color = :red,
-        scatter = Theme(
-            marker = '⊝',
-            markersize = 0.03,
-            strokecolor = :black,
-            strokewidth = 0.1,
-        ),
-    )
-    AbstractPlotting.set_theme!(new_theme)
-    scene = scatter(rand(100), rand(100))
-    st = Stepper(scene, "/results/theming")
-    step!(st)
-    new_theme[:color] = :blue
-    step!(st)
-    new_theme[:scatter, :marker] = '◍'
-    step!(st)
-    new_theme[:scatter, :markersize] = 0.05
-    step!(st)
-    new_theme[:scatter, :strokewidth] = 0.1
-    step!(st)
-    new_theme[:scatter, :strokecolor] = :green
-    step!(st)
-    empty!(scene)
-    scene = scatter!(rand(100), rand(100))
-    step!(st)
-    scene[end][:marker] = 'π'
-    step!(st)
-
-    r = linspace(-0.5pi, pi + pi/4, 100)
-    AbstractPlotting.set_theme!(new_theme)
-    empty!(scene)
-    scene = surface!(r, r, (x, y)-> sin(2x) + cos(2y))
-    step!(st)
-    scene[end][:colormap] = :PuOr
-    step!(st)
-    surface!(r + 2pi - pi/4, r, (x, y)-> sin(2x) + cos(2y))
-    step!(st)
-    AbstractPlotting.set_theme!(resolution = (500, 500))
-    empty!(scene)
-    surface!(r + 2pi - pi/4, r, (x, y)-> sin(2x) + cos(2y))
-    step!(st)
-    st
 
 end
 output(result)
@@ -1589,138 +1753,195 @@ output(result)
 
 ```
 
-## Test
+## Stepper demo
 
 ```julia
 using Makie
 
 result = let
-    scene = text(
-        "boundingbox", raw = true,
-        align = (:left, :center),
-        position = (200, 50)
-    )
-    campixel!(scene)
-    linesegments!(boundingbox(scene), raw = true)
-
-    offset = 0
-    for a_lign in (:center, :left, :right), b_lign in (:center, :left, :right)
-        t = text!(
-            "boundingbox", raw = true,
-            align = (a_lign, b_lign),
-            position = (200, 100 + offset)
-        )[end]
-        linesegments!(boundingbox(t), raw = true)
-        offset += 50
+    scene = Scene()
+    function inc_pos(pos::NTuple{2, Int})
+        map(x -> x + 100, pos)
     end
-    scene
+    pos = (50, 50)
+    steps = ["Step 1", "Step 2", "Step 3"]
+    colors = AbstractPlotting.to_colormap(:Set1, length(steps))
+    lines!(scene, Rect(0,0,500,500), linewidth = 0.0001)
+
+    # initialize the stepper and give it an output destination
+    st = Stepper(scene, "/results/stepper_demo")
+
+    for i = 1:length(steps)
+        text!(
+            scene,
+            steps[i],
+            position = pos,
+            align = (:left, :bottom),
+            textsize = 100,
+            font = "Blackchancery",
+            color = colors[i],
+            scale_plot = false
+        )
+        pos = inc_pos(pos)
+        step!(st) # saves the step and increments the step by one
+    end
+    st
 
 end
 output(result)
 
 ```
 
-## Test
+## Implicit equation
 
 ```julia
 using Makie
 
 result = let
-   poly(IRect(0, 0, 200, 200), strokewidth=20, strokecolor=:red, color=(:black, 0.4))
+    r = range(-5, stop = 5, length = 400)
+    (a, b) = -1, 2
+    z = ((x,y) -> y.^4 - x.^4 + a .* y.^2 + b .* x.^2).(r, r')
+    z2 =  z .* (abs.(z) .< 250)
+    contour(r, r, z2)
+
 end
 output(result)
 
 ```
 
-## Test
+## Cube lattice
 
 ```julia
 using Makie
 
 result = let
-    scene = poly([Rect(0, 0, 20, 20)])
-    scatter!(Rect(0, 0, 20, 20), color = :red, markersize = 2, raw = true)
+    r = range(-3, stop = 3, length = 100)
+    me = [((1 ./ x).^2 + (1 ./ y).^2 + (1 ./ z).^2) for x=r, y=r, z=r]
+    me2 = me .* (abs.(me) .> 1.5)
+    contour(me2, color = :Set2)
 
 end
 output(result)
 
 ```
 
-## Test
+## 3D cube with sphere cutout, inside
 
 ```julia
 using Makie
 
 result = let
-   scatter(rand(10), color=rand(10), colormap=:Spectral)
+    scene = Scene()
+    r = range(-1, stop = 1, length = 100)
+    mat = [(x.^2 + y.^2 + z.^2) for x = r, y = r, z = r]
+    mat2 = mat .* (mat .> 1.4)
+    #plot the space inside
+    volume(mat2, algorithm = :absorptionrgba)
+
 end
 output(result)
 
 ```
 
-## Test
+## 3D cube with sphere cutout, outside
 
 ```julia
 using Makie
 
 result = let
-    lines(Rect(0, 0, 1, 1), linewidth = 4, scale_plot = false)
-    scatter!([Point2f0(0.5, 0.5)], markersize = 1, marker = 'I', scale_plot = false)
+    scene = Scene()
+    r = range(-1, stop = 1, length = 100)
+    mat = [(x.^2 + y.^2 + z.^2) for x=r, y=r, z=r]
+    mat2 = mat .* (mat .< 1.4)
+    #plot the space outside
+    volume(50..100, 50..100, 50..100, mat2, algorithm = :absorptionrgba)
 
 end
 output(result)
 
 ```
 
-## Test
+## Biohazard
 
 ```julia
 using Makie
 
 result = let
-   lines(rand(10), rand(10), color=rand(10), linewidth=10)
+    (a, b) = -1, 2
+    r = range(-5, stop = 5, length = 100)
+    z = ((x,y) -> y.^4 - x.^4 + a.*y.^2 + b.*x.^2).(r, r')
+    me = [cos.(2 .* pi .* sqrt.(x.^2 + y.^2)) .* (4 .* z) for x=r, y=r, z=r]
+    me2 = me .* (abs.(me) .> z .* 3)
+    volume(me2, algorithm = :absorptionrgba)
+
 end
 output(result)
 
 ```
 
-## Test
+## Twisty cube thing
 
 ```julia
 using Makie
 
 result = let
-   lines(rand(10), rand(10), color=rand(RGBAf0, 10), linewidth=10)
+    (a, b) = -1, 2
+    r = range(-2, stop = 2, length = 100)
+    z = ((x,y) -> x + y).(r, r') ./ 5
+    me = [z .* sin.(3 .* (atan.(y ./ x) .+ z.^2 .+ pi .* (x .> 0))) for x=r, y=r, z=r]
+    me2 = me .* (me .> z .* 0.25)
+    contour(me2, levels = 6, colormap = :Spectral)
+
 end
 output(result)
 
 ```
 
-## Test
+## Spacecraft from a galaxy far, far away
 
 ```julia
 using Makie
 
 result = let
-   meshscatter(rand(10), rand(10), rand(10), color=rand(10))
+    N = 100
+    r = range(-1, stop = 1, length = N)
+
+    # bunch of equations and inequalities
+    f1(x,y,z) = x.^2 .+ y.^2 .+ z.^2 #center sphere
+    f2(x,y,z) = y.^2 .+ z.^2 #command deck cylinder thing
+    f3(x,y,z) = x.^2 .+ 4 .* y.^2 #controls the flattened cylinder connecting center pod to wings
+    f4(x,y,z) = (y .* 0.7 .+ 0.05) #defines the diagonal spokes
+    f5(x,y,z) = (y .* 0.7 .- 0.05) #defines the diagonal spokes
+    f6(x,y,z) = abs.(x) + 0.3 .* abs.(y) #frame part of the wings
+
+    e1(x,y,z) = 0.12 .* (1 .- abs.(z)) #limits of a hexagonal tube in the inside of the craft
+    e2(x,y,z) = abs.(z) .* (abs.(z) .< 0.95) #outer limits of the wing plane
+    e3(x,y,z) = abs.(z) .* (abs.(z) .> 0.9) #inner limits of the wing plane
+    e4(x,y,z) = (abs.(x) + abs.(0.3 .*y)) .* ((abs.(x) + abs.(0.3 .* y)) .< 1) #frame of the wings
+    e5(x,y,z) = abs.(z) .* (abs.(z) .< 1.05) #outside thickness of wing frames, including the spokes
+    e6(x,y,z) = abs.(z) .* (abs.(z) .> 0.80) #inside thickness of wing frames, including the spokes
+    e7(x,y,z) = abs.(x) .* (abs.(x) .< 0.7) #length of the straight bars part of frames
+    e8(x,y,z) = abs.(y) .* (abs.(y) .> 0.9) #width of the straight bars part of frames
+    e9(x,y,z) = abs.(y) .* (abs.(y) .< 0.035) #the thickness of the horizontal reinforcing bar on the wing planes
+
+    amp = 15 #this just amplifies the "strength" of a volume, so that it shows up more clearly in the plot
+
+    # spawn the tie fighter
+    me = [(f1(x,y,z) .* f1(x,y,z).<0.2) .+ ((f2(x,y,z) .* f2(x,y,z).<0.02).*((x.<0.68).*(x.>0.50))) .+ amp .* (f3(x,y,z) .* (f3(x,y,z) .< e1(x,y,z))) .+ (e2(x,y,z).*e3(x,y,z).*e4(x,y,z)) .+ (e5(x,y,z).*e6(x,y,z)).*((e7(x,y,z)).*(e8(x,y,z)) .+ e9(x,y,z) .+ ((x.>f5(x,y,z)).*x).*((x.<f4(x,y,z)).*x) .+ (((-).(x).>f5(x,y,z)).*x).*(((-).(x).<f4(x,y,z)).*x) .+ ((f6(x,y,z).*(f6(x,y,z).<1.05)).*(f6(x,y,z).*(f6(x,y,z).>0.95)))) for x=r, y=r, z=r]
+
+    me2 = me
+    for i = 1:length(r)
+        me2[:,:,i] = me2[:,:,i] .- min(me2[:,:,i]...)
+        me2[:,:,i] = me2[:,:,i] ./ max(me2[:,:,i]...)
+    end
+    contour(me2, colormap = :Purples, colorrange = (0.001,0.6), alpha = 1.0, levels = 10)
+
 end
 output(result)
 
 ```
 
-## Test
-
-```julia
-using Makie
-
-result = let
-   meshscatter(rand(10), rand(10), rand(10), color=rand(RGBAf0, 10))
-end
-output(result)
-
-```
-
-## Test
+## Unicode Ticks
 
 ```julia
 using Makie
@@ -1743,21 +1964,6 @@ output(result)
 
 ```
 
-## Test
-
-```julia
-using Makie
-
-result = let
-    angles = linspace(0, 2pi, 20)
-    pos = Point2f0.(sin.(angles), cos.(angles))
-    scatter(pos, rotations = -angles , marker = '▲', scale_plot = false)
-    scatter!(pos, markersize = 0.02, color = :red, scale_plot = false)
-
-end
-output(result)
-
-```
 
 ## Type recipe for molecule simulation
 
@@ -1812,7 +2018,8 @@ result = let
 
     # To write out a video of the whole simulation
     n = 5
-    grid = Point3f0.(linspace(-1, 1, n), reshape(linspace(-1, 1, n), (1, n, 1)), reshape(linspace(-1, 1, n), (1, 1, n)))
+    r = range(-1, stop = 1, length = n)
+    grid = Point3f0.(r, reshape(r, (1, n, 1)), reshape(r, (1, 1, n)))
     molecules = map(1:(n^3) * 3) do i
         i3 = ((i - 1) ÷ 3) + 1
         xy = 0.1; z = 0.08
@@ -1826,6 +2033,115 @@ result = let
     record(scene, "/results/type_recipe_for_molecule_simulation.gif", 1:N) do i
         scene[end][:advance] = i
    end
+
+end
+output(result)
+
+```
+
+## WorldClim visualization
+
+```julia
+using Makie
+ using FileIO, GeometryTypes, Colors, GDAL
+
+result = let
+
+    #=
+    This example requires the GDAL package, from https://github.com/JuliaGeo/GDAL.jl
+    For more information about GDAL, see the official documentation at: https://gdal.org/
+    =#
+
+    # register GDAL drivers
+    GDAL.allregister()
+
+    # function to check if a file is a .tif file
+    istiff(x) = endswith(x, ".tif")
+
+    # set up 7zip
+    exe7z = is_windows() ? joinpath(JULIA_HOME, "7z.exe") : joinpath(JULIA_HOME, "7z")
+    unzip(in, out) = run(`$exe7z x -y $in -o$out`)
+
+    # function to read the raster data from the GeoTIFF
+    function loadf0(x)
+        img = GDAL.open(x, GDAL.GA_ReadOnly)
+        band = GDAL.getrasterband(img, 1)
+        xsize = GDAL.getrasterbandxsize(band)
+        ysize = GDAL.getrasterbandysize(band)
+        data = Array{Float32}(xsize, ysize)
+        GDAL.rasterio(band, GDAL.GF_Read, 0, 0, xsize, ysize, data, xsize, ysize, GDAL.GDT_Float32, 0, 0)
+        data'
+    end
+
+    # since we cannot re-distribute the dataset, this function grabs the dataset from the host server
+    function load_dataset(name)
+        # get the dataset from:
+        # http://worldclim.org/version2
+        """
+        This is WorldClim 2.0 Beta version 1 (June 2016) downloaded from http://worldclim.org
+        They represent average monthly climate data for 1970-2000.
+        The data were created by Steve Fick and Robert Hijmans
+        You are not allowed to redistribute these data.
+        """
+        if !isfile("$name.zip")
+            # This might fail on windows - just try again a couple of times -.-
+            download("http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_10m_$name.zip", "$name.zip")
+        end
+        if !isdir(name)
+            unzip("$name.zip", name)
+        end
+        loadf0.(filter(istiff, joinpath.(name, readdir(name))))
+    end
+
+    # load the actual datasets!
+    water = load_dataset("prec")
+    temperature = load_dataset("tmax")
+
+    # calculate geometries
+    m = GLNormalUVMesh(Sphere(Point3f0(0), 1f0), 200)
+    p = decompose(Point3f0, m)
+    uv = decompose(UV{Float32}, m)
+    norms = decompose(Normal{3, Float32}, m)
+
+    # plot the temperature as color map on the globe
+    cmap = [:darkblue, :deepskyblue2, :deepskyblue, :gold, :tomato3, :red, :darkred]
+    scene = Makie.mesh(m, color = temperature[10], colorrange = (-50, 50), colormap = cmap, shading = true, show_axis = false)
+    temp_plot = scene[end];
+
+    # function to scale precipitation to a suitable marker size
+    function to_msize(uv, water, xysize = 0.008, normalization = 908f0 * 4f0)
+        markersize = map(uv) do uv
+            wh = size(water) .- 1
+            x, y = round.(Int, Tuple(uv) .* wh) .+ 1
+            val = water[x, y] / normalization
+            val = val < 0.0 ? 0f0 : val
+            Vec3f0(xysize, xysize, val)
+        end
+    end
+
+    # plot precipitation as vertical bars
+    meshscatter!(scene,
+        p, rotations = norms,
+        marker = Rect3D(Vec3f0(0), Vec3f0(1)), markersize = to_msize(uv, water[1]), raw = true,
+        color = (:skyblue2, 0.9)
+    )
+    wplot = scene[end]
+
+    # update eye position
+    eye_position, lookat, upvector = Vec3f0(0.5, 0.8, 2.5), Vec3f0(0), Vec3f0(0, 1, 0)
+    update_cam!(scene, eye_position, lookat, upvector)
+    scene
+
+    # save animation
+    r = record(scene, "/results/worldclim_visualization.gif", 0:(11*4)) do i
+        # Make simulation slower. TODO figure out how do this nicely with ffmpeg
+        if i % 4 == 0
+            i2 = (i ÷ 4) + 1
+            temp_plot[:color] = temperature[i2]
+            wplot[:markersize] = to_msize(uv, water[i2])
+        end
+    end
+    return r
 
 end
 output(result)
