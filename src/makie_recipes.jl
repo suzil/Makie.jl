@@ -68,27 +68,25 @@ function plot!(plot::Contour{<: Tuple{X, Y, Z, Vol}}) where {X, Y, Z, Vol}
     cliprange = replace_automatic!(plot, :colorrange) do
         valuerange
     end
-    @show cliprange[] valuerange[]
     cmap = lift(color, levels, linewidth, alpha, cliprange, valuerange) do _cmap, l, lw, alpha, cliprange, vrange
         levels = to_levels(l, vrange)
         N = length(levels) * 50
         iso_eps = 0.1 # TODO calculate this
         cmap = to_colormap(_cmap)
         v_interval = cliprange[1] .. cliprange[2]
-        println(v_interval, " ", -0.8 in v_interval)
         # resample colormap and make the empty area between iso surfaces transparent
         map(1:N) do i
             i01 = (i-1) / (N - 1)
             c = AbstractPlotting.interpolated_getindex(cmap, i01)
             isoval = vrange[1] + (i01 * (vrange[2] - vrange[1]))
-            line = reduce(false, levels) do v0, level
+            line = reduce(levels, init = false) do v0, level
                 (isoval in v_interval) || return false
                 v0 || (abs(level - isoval) <= iso_eps)
             end
             RGBAf0(Colors.color(c), line ? alpha : 0.0)
         end
     end
-    volume!(plot, x, y, z, volume, colormap = cmap, colorrange = cliprange, algorithm = :iso)
+    volume!(plot, x, y, z, volume, colormap = cmap, colorrange = cliprange, algorithm = 7)
 end
 
 function plot!(plot::T) where T <: Union{Contour, Contour3d}
@@ -114,7 +112,6 @@ end
 function AbstractPlotting.data_limits(x::Contour{<: Tuple{X, Y, Z}}) where {X, Y, Z}
     AbstractPlotting._boundingbox(value.((x[1], x[2]))...)
 end
-
 
 
 @recipe(VolumeSlices, x, y, z, volume) do scene

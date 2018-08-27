@@ -1,21 +1,27 @@
 using Test
-using BinaryProvider, FileIO, Random
+using BinaryProvider, FileIO, Random, Pkg
 include("../examples/library.jl")
 
 record_reference_images = get(ENV, "RECORD_EXAMPLES", false) == "true"
-version = v"0.0.5"
+version = v"0.0.6"
 
 download_dir = joinpath(@__DIR__, "testimages")
 tarfile = joinpath(download_dir, "images.zip")
 url = "https://github.com/SimonDanisch/ReferenceImages/archive/v$(version).tar.gz"
-refpath = joinpath(download_dir, "ReferenceImages-$(version)")
-recordpath = Pkg.dir("ReferenceImages")
-#
-# function url2hash(url::String)
-#     path = download(url)
-#     open(io-> bytes2hex(BinaryProvider.sha256(io)), path)
-# end
-# url2hash(url) |> println
+refpath = joinpath(download_dir, "ReferenceImages-$(version)", "images")
+recordpath = joinpath(homedir(), "ReferenceImages", "images")
+if record_reference_images
+    cd(homedir()) do
+        isdir(dirname(recordpath)) || run(`git clone git@github.com:SimonDanisch/ReferenceImages.git`)
+        isdir(recordpath) && rm(recordpath)
+    end
+end
+
+function url2hash(url::String)
+    path = download(url)
+    open(io-> bytes2hex(BinaryProvider.sha256(io)), path)
+end
+url2hash(url) |> println
 
 
 if !record_reference_images
@@ -24,7 +30,7 @@ if !record_reference_images
         refpath = recordpath
     elseif !isdir(refpath)
         download_images() = BinaryProvider.download_verify(
-            url, "f893d1fc97985c479d797cbb40165d7d9f2896661347b317d7608ad22d3b9700",
+            url, "8726dc6015e29b2cbb1b73880a0880c5bdeec0f52f787450110d4eb49d3897d5",
             tarfile
         )
         try
@@ -44,14 +50,13 @@ if !record_reference_images
         end
     end
 else
-    refpath = Pkg.dir("ReferenceImages")
+    refpath = recordpath
 end
-
 
 function toimages(f, example, x::Scene, record)
     image = Makie.scene2image(x)
     rpath = joinpath(refpath, "$(example.unique_name).jpg")
-    if record || !isfile(rpath)
+    if record
         FileIO.save(joinpath(recordpath, "$(example.unique_name).jpg"), image)
     else
         refimage = FileIO.load(joinpath(refpath, "$(example.unique_name).jpg"))
@@ -66,7 +71,7 @@ function toimages(f, example, s::Stepper, record)
     if record
         # just copy the stepper files from s.folder into the recordpath
         rpath2 = joinpath(recordpath, basename(s.folder))
-        cp(s.folder, rpath2)
+        cp(s.folder, rpath2, force = true)
     else
         for frame in readdir(s.folder)
             is_image_file(frame) || continue
@@ -99,19 +104,19 @@ end
 
 include("visualregression.jl")
 
-function test_examples(record, tags...)
+function test_examples(record, tags...; kw_args...)
     Random.seed!(42)
     @testset "Visual Regression" begin
-        eval_examples(tags..., replace_nframes = true, outputfile = (entry, ending)-> "./media/" * string(entry.unique_name, ending)) do example, value
+        eval_examples(tags..., replace_nframes = true, outputfile = (entry, ending)-> "./media/" * string(entry.unique_name, ending); kw_args...) do example, value
             sigma = [1,1]; eps = 0.02
-            maxdiff = 0.03
+            maxdiff = 0.05
             toimages(example, value, record) do image, refimage
                 @testset "$(example.title):" begin
-                    # diff = approx_difference(image, refimage, sigma, eps)
-                    # if diff >= maxdiff
+                    diff = approx_difference(image, refimage, sigma, eps)
+                    if diff >= maxdiff
                         save(Pkg.dir("Makie", "test", "testresults", "$(example.unique_name)_differ.jpg"), hcat(image, refimage))
-                    # end
-                    # @test diff < maxdiff
+                    end
+                    @test diff < maxdiff
                 end
             end
             # reset global states
@@ -126,4 +131,52 @@ isdir("media") || mkdir("media")
 isdir("testresults") || mkdir("testresults")
 AbstractPlotting.set_theme!(resolution = (500, 500))
 
-test_examples(record_reference_images)
+@info("Number of examples in database: $(length(database))")
+
+exclude_tags = ["bigdata"]
+@info("Excluding tags: $exclude_tags")
+
+indices_excluded = []
+for tag in exclude_tags
+    global indices_excluded
+    indices = find_indices(tag)
+    indices_excluded = vcat(indices_excluded, indices)
+end
+num_excluded = length(unique(indices_excluded))
+@info("Number of examples to be skipped: $(num_excluded)")
+
+# run the tests
+test_examples(record_reference_images; exclude_tags = exclude_tags)
+
+cd(@__DIR__)
+str = read("../comptest.jl", String);
+
+exprlins = split(str, '\n');
+
+imports = filter(x-> startswith(x, "using"), exprlins)
+rest = filter(x-> !startswith(x, "using"), exprlins)
+N = 6
+Nstep = length(rest) ÷ N
+for i in 1:N
+    open("precompile$i.jl", "w") do io
+        start = ((i-1) * Nstep) + 1
+        println(io, "using Pkg, Test, LinearAlgebra, Random, Statistics, Dates")
+        for elem in imports
+            println(io, elem)
+        end
+        for j in start:(start + Nstep -1)
+            line = rest[j]
+            if !startswith(line, "using")
+                x = Meta.parse(line, raise = true) # is parseable?
+                if Meta.isexpr(x, :incomplete)
+                    continue
+                end
+                line = string("try;", line, "; catch; end")
+            end
+            println(io, line)
+        end
+        if i != N
+            println(io, "include(\"precompile$(i+1).jl\")")
+        end
+    end
+end

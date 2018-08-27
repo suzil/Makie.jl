@@ -32,7 +32,7 @@ function _default(main::MatTypes{T}, ::Style, data::Dict) where T <: Colorant
         )
     end
 end
-function _default(main::VecTypes{T}, ::Style, data::Dict) where T <: Colorant
+function _default(main::VectorTypes{T}, ::Style, data::Dict) where T <: Colorant
     @gen_defaults! data begin
         image                 = main => (Texture, "image, can be a Texture or Array of colors")
         primitive::GLUVMesh2D = SimpleRectangle{Float32}(0f0, 0f0, length(value(main)), 50f0) => "the 2D mesh the image is mapped to. Can be a 2D Geometry or mesh"
@@ -235,16 +235,12 @@ end
 
 function _default(main::VolumeTypes{T}, s::Style, data::Dict) where T <: VolumeElTypes
     @gen_defaults! data begin
-        dimensions = Vec3f0(1)
-    end
-    modeldflt = AbstractPlotting.translationmatrix(-data[:dimensions] / 2f0)
-    modelinv = const_lift(inv, get(data, :model, modeldflt))
-    @gen_defaults! data begin
         volumedata       = main => Texture
-        hull::GLUVWMesh  = AABB{Float32}(Vec3f0(0), dimensions)
+        hull::GLUVWMesh  = AABB{Float32}(Vec3f0(0), Vec3f0(1))
         light_position   = Vec3f0(0.25, 1.0, 3.0)
         light_intensity  = Vec3f0(15.0)
-        modelinv         = modelinv
+        model            = Mat4f0(I)
+        modelinv         = const_lift(inv, model)
 
         color_map        = default(Vector{RGBA}, s) => Texture
         color_norm       = color_map == nothing ? nothing : const_lift(extrema2f0, main)
@@ -264,16 +260,10 @@ end
 
 function _default(main::VolumeTypes{T}, s::Style, data::Dict) where T <: RGBA
     @gen_defaults! data begin
-        dimensions = Vec3f0(1)
-    end
-    modeldflt = modeldefault(data[:dimensions])
-    model = const_lift(identity, get(data, :model, modeldflt))
-    modelinv = const_lift(inv, get(data, :model, modeldflt))
-    @gen_defaults! data begin
         volumedata       = main => Texture
-        hull::GLUVWMesh  = AABB{Float32}(Vec3f0(0), dimensions)
-        model            = model
-        modelinv         = modelinv
+        hull::GLUVWMesh  = AABB{Float32}(Vec3f0(0), Vec3f0(1))
+        model            = Mat4f0(I)
+        modelinv         = const_lift(inv, model)
 
         # These don't do anything but are needed for type specification in the frag shader
         color_map        = nothing
@@ -291,16 +281,10 @@ end
 
 function _default(main::IndirectArray{T}, s::Style, data::Dict) where T <: RGBA
     @gen_defaults! data begin
-        dimensions       = Vec3f0(1)
-    end
-    modeldflt = modeldefault(data[:dimensions])
-    model = const_lift(identity, get(data, :model, modeldflt))
-    modelinv = const_lift(inv, get(data, :model, modeldflt))
-    @gen_defaults! data begin
         volumedata       = main.index => Texture
-        hull::GLUVWMesh  = AABB{Float32}(Vec3f0(0), dimensions)
-        model            = model
-        modelinv         = modelinv
+        hull::GLUVWMesh  = AABB{Float32}(Vec3f0(0), Vec3f0(1))
+        model            = Mat4f0(I)
+        modelinv         = const_lift(inv, model)
 
         color_map        = main.values => TextureBuffer
         color_norm       = nothing
