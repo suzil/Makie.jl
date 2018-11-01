@@ -10,7 +10,6 @@ ImageTransformations
 UnicodeFun
 ColorBrewer
 ModernGL
-GLFW 2.2.0
 FreeType
 FreeTypeAbstraction 0.3.0 #for findfont
 @windows ImageMagick
@@ -19,7 +18,6 @@ FreeTypeAbstraction 0.3.0 #for findfont
 AbstractPlotting
 Primes
 PlotUtils
-#Cairo
 IntervalSets
 Showoff
 ColorTypes

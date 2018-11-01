@@ -39,12 +39,7 @@ export widths, decompose
 
 const has_ffmpeg = Ref(false)
 
-
-struct OpenGLBackend <: AbstractDisplay
-end
-
 function __init__()
-    AbstractPlotting.register_backend!(OpenGLBackend())
     has_ffmpeg[] = try
         success(`ffmpeg -h`)
     catch
@@ -58,8 +53,6 @@ end
 
 include("makie_recipes.jl")
 include("utils.jl")
-include("glbackend/glbackend.jl")
-# include("cairo/cairo.jl")
 include("output.jl")
 include("video_io.jl")
 
