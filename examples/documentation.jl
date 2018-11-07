@@ -19,7 +19,7 @@
         )
         s = scene[end] # last plot in scene
 
-        record(scene, @outputfile(mp4), 1:N) do i
+        record(scene, @replace_with_a_path(mp4), 1:N) do i
             # calculate new ball position
             global t = t + ts
             global xyvec = xyvec .+ velvec .* ts
@@ -38,24 +38,23 @@
         N = 100
         scene = scatter([0], [0], marker = '❤', markersize = 0.5, color = :red, raw = true)
         s = scene[end] # last plot in scene
-        record(scene, @outputfile(mp4), range(0, stop = 10pi, length = N)) do i
+        record(scene, @replace_with_a_path(mp4), range(0, stop = 10pi, length = N)) do i
             s[:markersize] = (cos(i) + 1) / 4 + 0.2
         end
     end
 
     @cell "Travelling wave" [animated, lines, updating, interaction] begin
         scene = Scene()
-        time = Node(0.0)
+        mytime = Node(0.0)
         f(v, t) = sin(v + t)
         scene = lines!(
             scene,
-            lift(t -> f.(range(0, stop = 2pi, length = 50), t), time),
-            color = :blue
-        )
+            lift(t -> f.(range(0, stop = 2pi, length = 50), t), mytime),
+            color = :blue)
         p1 = scene[end];
         N = 100
-        record(scene, @outputfile(mp4), range(0, stop = 4pi, length = N)) do i
-            time[] = i
+        record(scene, @replace_with_a_path(mp4), range(0, stop = 4pi, length = N)) do i
+            mytime[] = i
         end
     end
 
@@ -160,7 +159,7 @@
     #     )
     #     AbstractPlotting.set_theme!(new_theme)
     #     scene = scatter(rand(100), rand(100))
-    #     st = Stepper(scene, @outputfile)
+    #     st = Stepper(scene, @replace_with_a_path)
     #     step!(st)
     #     new_theme[:color] = :blue
     #     step!(st)
@@ -208,8 +207,8 @@
         axis = scene[Axis] # get axis
         scene
 
-        st = Stepper(scene, @outputfile)
-        step!(st)
+        st = Stepper(scene, @replace_with_a_path)
+        step!(st);
         axis[:frame][:linewidth] = 5
         step!(st)
         axis[:grid][:linewidth] = (1, 5)
@@ -243,7 +242,7 @@
             colors = AbstractPlotting.to_colormap(:Set1, length(steps))
             lines!(scene, Rect(0,0,500,500), linewidth = 0.0001)
             # initialize the stepper and give it an output destination
-            st = Stepper(scene, @outputfile)
+            st = Stepper(scene, @replace_with_a_path)
 
             for i = 1:length(steps)
                 text!(

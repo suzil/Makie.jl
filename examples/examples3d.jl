@@ -1,5 +1,29 @@
 
 @block SimonDanisch ["3d"] begin
+    @cell "Image on Geometry (Moon)" [mesh, image] begin
+        using FileIO
+        moon = try
+            load(download("https://svs.gsfc.nasa.gov/vis/a000000/a004600/a004675/phases.0001_print.jpg"))
+        catch e
+            @warn("Download the moon failed. Using random image, so this test will fail! (error: $e)")
+            rand(RGBAf0, 100, 100) # don't error test when e.g. offline
+        end
+        scene = mesh(Sphere(Point3f0(0), 1f0), color = moon, shading = false, show_axis = false, center = false)
+        update_cam!(scene, Vec3f0(-2, 2, 2), Vec3f0(0))
+        scene
+    end
+    @cell "Image on Geometry (Earth)" [mesh, image] begin
+        using FileIO, Colors
+        earth = try
+            load(download("https://svs.gsfc.nasa.gov/vis/a000000/a002900/a002915/bluemarble-2048.png"))
+        catch e
+            @warn("Downloading the earth failed. Using random image, so this test will fail! (error: $e)")
+            rand(RGBAf0, 100, 100) # don't error test when e.g. offline
+        end
+        m = GLNormalUVMesh(Sphere(Point3f0(0), 1f0), 60)
+        mesh(m, color = earth, shading = false)
+    end
+
     @cell "Orthographic Camera" [meshscatter, cameracontrols, update_cam] begin
         using GeometryTypes
         x = Vec3f0(0); baselen = 0.2f0; dirlen = 1f0
@@ -138,7 +162,7 @@
         linesegments!(scene, lines, linestyle = :dot, limits = limits)
         # record a video
         N = 150
-        record(scene, @outputfile(mp4), 1:N) do i
+        record(scene, @replace_with_a_path(mp4), 1:N) do i
             push!(t, Base.time())
         end
     end
@@ -399,7 +423,7 @@
         )
         N = 150
         scene
-        record(scene, @outputfile(mp4), range(5, stop = 40, length = N)) do i
+        record(scene, @replace_with_a_path(mp4), range(5, stop = 40, length = N)) do i
             surf[3] = surf_func(i)
         end
     end
@@ -488,7 +512,7 @@
         update_cam!(scene, eyepos, lookat)
         l = scene[1]
         N = 150
-        record(scene, @outputfile(mp4), 1:N) do i
+        record(scene, @replace_with_a_path(mp4), 1:N) do i
             t = (time() - start) * 700
             pos .= calcpositions.((rings,), 1:N2, t, (t_audio,))
             l[1] = pos # update argument 1
@@ -507,7 +531,7 @@
         colors = to_colormap(:RdYlBu)
         #display(scene) # would be needed without the record
         N = 150
-        path = record(scene, @outputfile(gif), 1:N) do i
+        path = record(scene, @replace_with_a_path(gif), 1:N) do i
             global lineplots, scene
             if length(lineplots) < 20
                 p = lines!(
@@ -519,7 +543,7 @@
                 pushfirst!(lineplots, p)
                 translate!(p, 0, 0, 0)
                 #TODO automatically insert new plots
-                insert!(Makie.global_gl_screen(), scene, p)
+                insert!(Makie.GLMakie.global_gl_screen(), scene, p)
             else
                 lineplots = circshift(lineplots, 1)
                 lp = first(lineplots)
@@ -548,16 +572,16 @@
     end
 
     @cell "Explicit frame rendering" [opengl, render_frame, meshscatter] begin
-        using ModernGL
+        using ModernGL, Makie
         using GLFW
-        Makie.opengl_renderloop[] = (screen) -> nothing
+        Makie.GLMakie.opengl_renderloop[] = (screen) -> nothing
         function update_loop(m, buff, screen)
             for i = 1:20
                 GLFW.PollEvents()
                 buff .= rand.(Point3f0) .* 20f0
                 m[1] = buff
-                Makie.render_frame(screen)
-                GLFW.SwapBuffers(Makie.to_native(screen))
+                Makie.GLMakie.render_frame(screen)
+                GLFW.SwapBuffers(Makie.GLMakie.to_native(screen))
                 glFinish()
             end
         end
@@ -565,11 +589,11 @@
         display(scene)
         meshplot = scene[end]
         buff = rand(Point3f0, 10^4) .* 20f0;
-        screen = Makie.global_gl_screen();
+        screen = Makie.GLMakie.global_gl_screen();
         @time update_loop(meshplot, buff, screen)
-        Makie.opengl_renderloop[] = Makie.renderloop # restore previous loop
+        Makie.GLMakie.opengl_renderloop[] = Makie.GLMakie.renderloop # restore previous loop
         # when done:
-        Makie.destroy!(screen)
+        Makie.GLMakie.destroy!(screen)
         scene
     end
     # @cell "2D text in 3D" [text, annotations] begin
