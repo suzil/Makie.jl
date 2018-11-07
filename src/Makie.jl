@@ -47,9 +47,6 @@ end
 
 include("makie_recipes.jl")
 include("utils.jl")
-using .GLMakie
-using .GLMakie: assetpath, loadasset
-
 include("video_io.jl")
 
 end
