@@ -50,16 +50,16 @@ Note that the [RPM Fusion repo](https://rpmfusion.org/) is needed for `ffmpeg`.
 
 Examples, and test infrastructure, are hosted at [`MakieGallery.jl`](https://github.com/JuliaPlots/MakieGallery.jl)
 
-## Examples from the documentation: 
+## Examples from the documentation:
 
-[![](http://makie.juliaplots.org/stable/media/thumb-3d_contour_with_2d_contour_slices.jpg)](http://makie.juliaplots.org/stable/examples-volume.html#3D-Contour-with-2D-contour-slices-1)
-[![](http://makie.juliaplots.org/stable/media/thumb-animated_scatter.jpg)](http://makie.juliaplots.org/stable/examples-scatter.html#Animated-Scatter-1)
-[![](http://makie.juliaplots.org/stable/media/thumb-animated_surface_and_wireframe.jpg)](http://makie.juliaplots.org/stable/examples-surface.html#Animated-surface-and-wireframe-1)
-[![](http://makie.juliaplots.org/stable/media/thumb-arrows_3d.jpg)](http://makie.juliaplots.org/stable/examples-arrows.html#Arrows-3D-1)
-[![](http://makie.juliaplots.org/stable/media/thumb-arrows_on_sphere.jpg)](http://makie.juliaplots.org/stable/examples-surface.html#Arrows-on-Sphere-1)
-[![](http://makie.juliaplots.org/stable/media/thumb-axis___surface.jpg)](http://makie.juliaplots.org/stable/examples-surface.html#Axis-+-Surface-1)
-[![](http://makie.juliaplots.org/stable/media/thumb-barplot_1.jpg)](http://makie.juliaplots.org/stable/examples-barplot.html#barplot-1)
-[![](http://makie.juliaplots.org/stable/media/thumb-colored_mesh.jpg)](http://makie.juliaplots.org/stable/examples-mesh.html#Colored-Mesh-1)
+[![](https://simondanisch.github.io/ReferenceImages/gallery//3d_contour_with_2d_contour_slices/media/image.jpg)](https://simondanisch.github.io/ReferenceImages/gallery//3d_contour_with_2d_contour_slices/index.html)
+[![](https://simondanisch.github.io/ReferenceImages/gallery//animated_scatter/media/animated_scatter.mp4)](https://simondanisch.github.io/ReferenceImages/gallery//animated_scatter/media/animated_scatter.mp4)
+[![](https://simondanisch.github.io/ReferenceImages/gallery//animated_surface_and_wireframe/media/animated_surface_and_wireframe.mp4)](https://simondanisch.github.io/ReferenceImages/gallery//animated_surface_and_wireframe/index.html)
+[![](https://simondanisch.github.io/ReferenceImages/gallery//arrows_3d/media/image.jpg)](https://simondanisch.github.io/ReferenceImages/gallery//arrows_3d/index.html)
+[![](https://simondanisch.github.io/ReferenceImages/gallery//arrows_on_sphere/media/image.jpg)](https://simondanisch.github.io/ReferenceImages/gallery//arrows_on_sphere/index.html)
+[![](https://simondanisch.github.io/ReferenceImages/gallery//axis___surface/media/image.jpg)](https://simondanisch.github.io/ReferenceImages/gallery//axis___surface/index.html)
+[![](https://simondanisch.github.io/ReferenceImages/gallery//barplot_1/media/image.jpg)](https://simondanisch.github.io/ReferenceImages/gallery//barplot_1/media/image.jpg)
+[![](https://simondanisch.github.io/ReferenceImages/gallery//colored_mesh/media/image.jpg)](https://simondanisch.github.io/ReferenceImages/gallery//colored_mesh/index.html)
 [![](http://makie.juliaplots.org/stable/media/thumb-colored_triangle.jpg)](http://makie.juliaplots.org/stable/examples-mesh.html#colored-triangle-1)
 [![](http://makie.juliaplots.org/stable/media/thumb-colormaps.jpg)](http://makie.juliaplots.org/stable/examples-image.html#colormaps-1)
 [![](http://makie.juliaplots.org/stable/media/thumb-connected_sphere.jpg)](http://makie.juliaplots.org/stable/examples-scatter.html#Connected-Sphere-1)
@@ -153,4 +153,4 @@ PackageCompiler.compile_incremental(:Makie, :AbstractPlotting, force = false) # 
 
 PackageCompiler.compile_incremental(:Makie, :AbstractPlotting, force = true)
 ```
-Should the display not work after compilation, use `AbstractPlotting.__init__()`, or force display by calling `display(AbstractPlotting.PlotDisplay(), scene);` on your `Scene`. 
+Should the display not work after compilation, use `AbstractPlotting.__init__()`, or force display by calling `display(AbstractPlotting.PlotDisplay(), scene);` on your `Scene`.
